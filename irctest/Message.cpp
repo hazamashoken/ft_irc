@@ -6,12 +6,19 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/27 09:33:08 by abossel           #+#    #+#             */
-/*   Updated: 2023/03/27 12:04:08 by abossel          ###   ########.fr       */
+/*   Updated: 2023/03/28 09:34:28 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Message.hpp"
 #include <iostream>
+
+#define IRC_LETTER "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+#define IRC_NUMBER "0123456789"
+#define IRC_SPECIAL "-[]\\`^{}"
+#define IRC_HOSTEX ".-"
+#define IRC_HOST (IRC_LETTER IRC_NUMBER IRC_HOSTEX)
+#define IRC_NICK (IRC_LETTER IRC_NUMBER IRC_SPECIAL)
 
 bool Message::readMessage(std::string message)
 {
@@ -28,29 +35,19 @@ void Message::printMessage()
 }
 
 /*
- * returns true if any character in string front is at the front of message
- */
-bool Message::isFront(std::string message, std::string front)
-{
-    if (message.size() > 0 && front.find(message[0]) != std::string::npos)
-        return (true);
-    return (false);
-}
-
-/*
  * returns a string with the first size chars removed
  */
-std::string Message::popFront(std::string message, size_t size)
+std::string Message::popFront(std::string message)
 {
-    if (message.size() > 0 && message.size() > size)
-        return (message.substr(size));
-    return ("");
+    if (message.size() > 0)
+        return (message.substr(1));
+    return (message);
 }
 
 /*
  * returns a string with any chars from trim removed from front of string
  */
-std::string Message::trimLeft(std::string message, std::string trim)
+std::string Message::trimFront(std::string message, std::string trim)
 {
     size_t pos;
 
@@ -64,36 +61,20 @@ std::string Message::trimLeft(std::string message, std::string trim)
     return (message.substr(pos));
 }
 
-/*
- * returns a string with all chars converted to lower case
- */
-std::string Message::toLowerString(std::string message)
-{
-    std::string low;
-    size_t pos;
-
-    for (pos = 0; pos < message.size(); pos++)
-        low.push_back(static_cast<char>(tolower(message[pos])));
-    return (low);
-}
-
-std::string Message::readHostname(std::string message)
-{
-    std::string temp;
-    std::string host;
-
-    temp = toLowerString(message);
-    host += trimLeft(temp, "abcdefghijklmnopqrstuvwxyz");
-
-    return (host);
-}
-
 bool Message::readPrefix(std::string message)
 {
-    std::string tmp;
+    std::string s;
+    size_t pos;
+    size_t end;
+    size_t next;
 
-    if (!isFront(message, ":"))
+    pos = 0;
+    s = message;
+    if (s.compare(pos, 1, ":") != 0)
         return (true);
-    tmp = popFront(message);
-    tmp = trimLeft(tmp, " ");
+    pos++;
+    next = s.find_first_not_of(IRC_LETTER IRC_NUMBER IRC_HOSTEX IRC_SPECIAL, pos);
+    if 
+    // read hostname or nick
+    pos = next;
 }

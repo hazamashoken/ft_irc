@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/27 09:24:28 by abossel           #+#    #+#             */
-/*   Updated: 2023/03/27 11:20:29 by abossel          ###   ########.fr       */
+/*   Updated: 2023/03/28 08:56:41 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,11 +22,8 @@ class Message
         void printMessage();
 
     private:
-        bool isFront(std::string message, std::string front);
-        std::string popFront(std::string message, size_t size = 1);
-        std::string trimLeft(std::string message, std::string trim);
-        std::string toLowerString(std::string message);
-        std::string readHostname(std::string message);
+        std::string popFront(std::string message);
+        std::string trimFront(std::string message, std::string trim);
         bool readPrefix(std::string message);
 
         // prefix data
