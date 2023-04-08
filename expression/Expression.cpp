@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 10:19:58 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/07 20:58:42 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/09 00:01:01 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,12 +20,12 @@
 
 Expression::Expression()
 {
-	_extra_matched_string = NULL;
+	set_matched(NULL);
 }
 
 Expression::Expression(std::string *matched)
 {
-	_extra_matched_string = matched;
+	set_matched(matched);
 }
 
 Expression::Expression(Expression const &other)
@@ -36,7 +36,7 @@ Expression::Expression(Expression const &other)
 Expression::Expression(Expression const &other, std::string *matched)
 {
 	*this = other;
-	_extra_matched_string = matched;
+	set_matched(matched);
 }
 
 Expression::~Expression()
@@ -347,6 +347,11 @@ bool Expression::match(std::string string)
 	if (_extra_matched_string != NULL)
 		*_extra_matched_string = _matched_string;
 	return (true);
+}
+
+void Expression::set_matched(std::string *matched)
+{
+	_extra_matched_string = matched;
 }
 
 std::string Expression::get_matched()

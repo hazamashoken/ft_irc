@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 10:06:37 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/07 20:58:50 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/08 23:58:43 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,6 +52,7 @@ class Expression
 		Expression &chstring(size_t min, size_t max = SIZE_MAX);
 		Expression &chstring();
 		bool match(std::string string);
+		void set_matched(std::string *matched);
 		std::string get_matched();
 		std::string get_remainder();
 
