@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 10:06:37 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/09 19:04:36 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/09 20:01:01 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,8 @@ class Expression
 		Expression &end();
 		Expression &digit(size_t min, size_t max = SIZE_MAX);
 		Expression &digit();
+		Expression &xdigit(size_t min, size_t max = SIZE_MAX);
+		Expression &xdigit();
 		Expression &upper(size_t min, size_t max = SIZE_MAX);
 		Expression &upper();
 		Expression &lower(size_t min, size_t max = SIZE_MAX);

@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 10:19:58 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/09 19:09:52 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/09 20:01:37 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -217,6 +217,16 @@ Expression &Expression::digit(size_t min, size_t max)
 Expression &Expression::digit()
 {
 	return (digit(1, 1));
+}
+
+Expression &Expression::xdigit(size_t min, size_t max)
+{
+	return (any("0123456789abcdefABCDEF", min, max));
+}
+
+Expression &Expression::xdigit()
+{
+	return (xdigit(1, 1));
 }
 
 Expression &Expression::upper(size_t min, size_t max)
