@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 10:53:19 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/07 20:54:48 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/09 19:06:45 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,14 @@ int main()
 	test(hostname, "abc123");
 	test(hostname, "www.google.com");
 	test(hostname, "www.");
+
+	Expression email;
+	email.alpha().alnum(0).add("+.").all("@").exp(hostname);
+
+	test(email, "abc123@example.com");
+	test(email, "ab.c+123@example.com");
+	test(email, "1abc123@example.com");
+	test(email, "abc123@@example.com");
 
 	std::string nick;
 	std::string user;

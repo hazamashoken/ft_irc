@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 10:19:58 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/09 00:01:01 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/09 19:09:52 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -121,6 +121,22 @@ Expression &Expression::any(std::string pattern, size_t min, size_t max)
 Expression &Expression::any(std::string pattern)
 {
 	return (any(pattern, 1, 1));
+}
+
+/*
+ * adds the characters in string pattern to the last added pattern
+ * only works if the last added is an ANY type pattern
+ */
+Expression &Expression::add(std::string pattern)
+{
+	iterator_type it;
+
+	if (!_expression_list.empty()
+		&& _expression_list.back().type == EXPRESSION_ANY)
+	{
+		_expression_list.back().pattern.append(pattern);
+	}
+	return (*this);
 }
 
 /*
@@ -251,10 +267,7 @@ Expression &Expression::alnum()
  */
 Expression &Expression::alnumspec(size_t min, size_t max)
 {
-	return (any("0123456789"
-				"abcdefghijklmnopqrstuvwxyz"
-				"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-				"-[]\\`^{}", min, max));
+	return (alnum(min, max).add("-[]\\`^{}"));
 }
 
 Expression &Expression::alnumspec()

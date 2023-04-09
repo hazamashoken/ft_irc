@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 10:06:37 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/08 23:58:43 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/09 19:04:36 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,7 @@ class Expression
 		Expression &all(std::string pattern);
 		Expression &any(std::string pattern, size_t min, size_t max = SIZE_MAX);
 		Expression &any(std::string pattern);
+		Expression &add(std::string pattern);
 		Expression &inv(std::string pattern, size_t min, size_t max = SIZE_MAX);
 		Expression &inv(std::string pattern);
 		Expression &exp(Expression const &expression, size_t min, size_t max = SIZE_MAX);
