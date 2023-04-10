@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 10:53:19 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/10 12:30:03 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/10 22:38:47 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,24 +27,24 @@ void test(Expression &e, std::string s)
 
 bool readPrefix(std::string prefix, std::string &server, std::string &nick, std::string &user, std::string &host)
 {
-	Expression nick_ex(nick);
+	Expression nick_ex;
 	nick_ex.alpha().add(IRC_SPECIAL).exp(Expression().alnum().add(IRC_SPECIAL).add("-"), 0, 8);
 
-	Expression user_ex(user);
+	Expression user_ex;
 	user_ex.inv(IRC_NONUSER, 1);
 
 	Expression short_ex;
 	short_ex.alnum(1).exp(Expression().any("-", 0).alnum(1), 0);
 
-	Expression host_ex(host);
+	Expression host_ex;
 	host_ex.exp(short_ex).exp(Expression().any(".").exp(short_ex, 1), 0);
 
 	Expression server_ex(server);
 	server_ex.exp(short_ex).exp(Expression().any(".").exp(short_ex, 1), 0);
 
 	Expression prefix_ex;
-	prefix_ex.exp(Expression().exp(nick_ex).any("!").exp(user_ex).any("@").exp(host_ex)).jmp();
-	prefix_ex.exp(Expression().exp(nick_ex).any("@").exp(host_ex)).jmp();
+	prefix_ex.exp(Expression().exp(nick_ex, nick).any("!").exp(user_ex, user).any("@").exp(host_ex, host)).jmp();
+	prefix_ex.exp(Expression().exp(nick_ex, nick).any("@").exp(host_ex, host)).jmp();
 	prefix_ex.exp(nick_ex).jmp();
 	//prefix_ex.exp(server_ex);
 
