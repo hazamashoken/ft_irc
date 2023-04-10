@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 10:06:37 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/09 20:01:01 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/10 01:50:46 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,8 @@ class Expression
 		Expression &inv(std::string pattern);
 		Expression &exp(Expression const &expression, size_t min, size_t max = SIZE_MAX);
 		Expression &exp(Expression const &expression);
+		Expression &jmp();
+		Expression &con();
 		Expression &end();
 		Expression &digit(size_t min, size_t max = SIZE_MAX);
 		Expression &digit();
@@ -55,7 +57,7 @@ class Expression
 		Expression &chstring(size_t min, size_t max = SIZE_MAX);
 		Expression &chstring();
 		bool match(std::string string);
-		void set_matched(std::string *matched);
+		//void set_matched(std::string *matched);
 		std::string get_matched();
 		std::string get_remainder();
 
@@ -72,7 +74,9 @@ class Expression
 		typedef std::vector<struct Pattern> container_type;
 		typedef container_type::iterator iterator_type;
 
-		container_type _expression_list;
+		int next_type(iterator_type it);
+
+		container_type _pattern_list;
 		std::string _matched_string;
 		std::string _remainder_string;
 		std::string *_extra_matched_string;

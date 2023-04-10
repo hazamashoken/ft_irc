@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 10:19:58 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/09 20:01:37 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/10 02:00:22 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,37 +16,40 @@
 #define EXPRESSION_ANY 1
 #define EXPRESSION_ALL 2
 #define EXPRESSION_EXP 3
-#define EXPRESSION_END 4
+#define EXPRESSION_JMP 4
+#define EXPRESSION_CON 5
+#define EXPRESSION_END 6
 
 Expression::Expression()
 {
-	set_matched(NULL);
+	_extra_matched_string = NULL;
 }
 
 Expression::Expression(std::string *matched)
 {
-	set_matched(matched);
+	_extra_matched_string = matched;
 }
 
 Expression::Expression(Expression const &other)
 {
 	*this = other;
+	_extra_matched_string = NULL;
 }
 
 Expression::Expression(Expression const &other, std::string *matched)
 {
 	*this = other;
-	set_matched(matched);
+	_extra_matched_string = matched;
 }
 
 Expression::~Expression()
 {
 	iterator_type it;
 
-	for (it = _expression_list.begin(); it != _expression_list.end(); it++)
+	for (it = _pattern_list.begin(); it != _pattern_list.end(); it++)
 		if (it->expression != NULL)
 			delete it->expression;
-	_expression_list.clear();
+	_pattern_list.clear();
 }
 
 Expression &Expression::operator=(Expression const &other)
@@ -56,17 +59,17 @@ Expression &Expression::operator=(Expression const &other)
 
 	if (this != &other)
 	{
-		_expression_list.clear();
-		for (i = 0; i < other._expression_list.size(); i++)
+		_pattern_list.clear();
+		for (i = 0; i < other._pattern_list.size(); i++)
 		{
 			p.expression = NULL;
-			if (other._expression_list[i].expression != NULL)
-				p.expression = new Expression(*other._expression_list[i].expression);
-			p.pattern = other._expression_list[i].pattern;
-			p.min = other._expression_list[i].min;
-			p.max = other._expression_list[i].max;
-			p.type = other._expression_list[i].type;
-			_expression_list.push_back(p);
+			if (other._pattern_list[i].expression != NULL)
+				p.expression = new Expression(*other._pattern_list[i].expression);
+			p.pattern = other._pattern_list[i].pattern;
+			p.min = other._pattern_list[i].min;
+			p.max = other._pattern_list[i].max;
+			p.type = other._pattern_list[i].type;
+			_pattern_list.push_back(p);
 		}
 		_matched_string = other._matched_string;
 		_remainder_string = other._remainder_string;
@@ -87,7 +90,7 @@ Expression &Expression::all(std::string pattern, size_t min, size_t max)
 	p.min = min;
 	p.max = max;
 	p.type = EXPRESSION_ALL;
-	_expression_list.push_back(p);
+	_pattern_list.push_back(p);
 	return (*this);
 }
 
@@ -111,7 +114,7 @@ Expression &Expression::any(std::string pattern, size_t min, size_t max)
 	p.min = min;
 	p.max = max;
 	p.type = EXPRESSION_ANY;
-	_expression_list.push_back(p);
+	_pattern_list.push_back(p);
 	return (*this);
 }
 
@@ -131,10 +134,10 @@ Expression &Expression::add(std::string pattern)
 {
 	iterator_type it;
 
-	if (!_expression_list.empty()
-		&& _expression_list.back().type == EXPRESSION_ANY)
+	if (!_pattern_list.empty()
+		&& _pattern_list.back().type == EXPRESSION_ANY)
 	{
-		_expression_list.back().pattern.append(pattern);
+		_pattern_list.back().pattern.append(pattern);
 	}
 	return (*this);
 }
@@ -180,7 +183,7 @@ Expression &Expression::exp(Expression const &expression, size_t min, size_t max
 	p.min = min;
 	p.max = max;
 	p.type = EXPRESSION_EXP;
-	_expression_list.push_back(p);
+	_pattern_list.push_back(p);
 	return (*this);	
 }
 
@@ -199,13 +202,43 @@ Expression &Expression::end()
 {
 	struct Pattern p;
 
-	if (_expression_list.size() != 0 && _expression_list.back().type == EXPRESSION_END)
+	if (_pattern_list.size() != 0 && _pattern_list.back().type == EXPRESSION_END)
 		return (*this);
 	p.expression = NULL;
 	p.min = 0;
 	p.max = 0;
 	p.type = EXPRESSION_END;
-	_expression_list.push_back(p);
+	_pattern_list.push_back(p);
+	return (*this);	
+}
+
+/*
+ * on success of the previous match jump to the next con
+ */
+Expression &Expression::jmp()
+{
+	struct Pattern p;
+
+	p.expression = NULL;
+	p.min = 0;
+	p.max = 0;
+	p.type = EXPRESSION_JMP;
+	_pattern_list.push_back(p);
+	return (*this);	
+}
+
+/*
+ * continue processing from the previous jump
+ */
+Expression &Expression::con()
+{
+	struct Pattern p;
+
+	p.expression = NULL;
+	p.min = 0;
+	p.max = 0;
+	p.type = EXPRESSION_CON;
+	_pattern_list.push_back(p);
 	return (*this);	
 }
 
@@ -319,63 +352,89 @@ Expression &Expression::chstring()
 bool Expression::match(std::string string)
 {
 	iterator_type it;
-	std::string string2;
-	std::string remainder2;
+	std::string previous;
+	std::string current;
+	bool jump;
 	size_t count;
 
-	_matched_string = "";
-	string2 = string;
-	for (it = _expression_list.begin(); it != _expression_list.end(); it++)
+	// set all matched strings to empty
+	_matched_string.clear();
+	_remainder_string.clear();
+	if (_extra_matched_string != NULL)
+		_extra_matched_string->clear();
+	jump = false;
+	previous = string;
+	current = string;
+	for (it = _pattern_list.begin(); it != _pattern_list.end(); it++)
 	{
 		count = 0;
-		if (it->type == EXPRESSION_ALL)
+		if (it->type == EXPRESSION_ALL && !jump)
 		{
-			while (string2.find(it->pattern) == 0 && count < it->max)
+			while (current.find(it->pattern) == 0 && count < it->max)
 			{
-				string2 = string2.substr(it->pattern.size());
+				current = current.substr(it->pattern.size());
 				count++;
 			}
 		}
-		else if (it->type == EXPRESSION_ANY)
+		else if (it->type == EXPRESSION_ANY && !jump)
 		{
-			if (string2.size() != 0)
-				count = string2.find_first_not_of(it->pattern);
+			if (current.size() != 0)
+				count = current.find_first_not_of(it->pattern);
 			if (count > it->max || count == std::string::npos)
-				count = std::min(it->max, string2.size());
-			string2 = string2.substr(count);
+				count = std::min(it->max, current.size());
+			current = current.substr(count);
 		}
-		else if (it->type == EXPRESSION_EXP)
+		else if (it->type == EXPRESSION_EXP && !jump)
 		{
-			while (it->expression->match(string2) && count < it->max)
+			while (it->expression->match(current) && count < it->max)
 			{
-				string2 = it->expression->get_remainder();
+				current = it->expression->get_remainder();
 				count++;
 			}
+		}
+		else if (it->type == EXPRESSION_JMP)
+		{
+			jump = true;
+		}
+		else if (it->type == EXPRESSION_CON)
+		{
+			jump = false;
 		}
 		else if (it->type == EXPRESSION_END)
 		{
-			_remainder_string = string2;
-			_matched_string = string.substr(0, string.size() - string2.size());
+			_remainder_string = current;
+			_matched_string = string.substr(0, string.size() - current.size());
 			if (_extra_matched_string != NULL)
 				*_extra_matched_string = _matched_string;
 			return (true);
 		}
+		// minimum patterns not read so the expression failed
 		if (count < it->min)
-			return (false);
+		{
+			// if next pattern is not jump then fail
+			if (next_type(it) != EXPRESSION_JMP)
+				return (false);
+			// skip the next jump instruction
+			it++;
+			// roll back the changes to the string
+			current = previous;
+		}
+		// reading this pattern is done so commit changes
+		previous = current;
 	}
-	if (string2.size() != 0)
+	if (current.size() != 0)
 		return (false);
-	_remainder_string = "";
+	_remainder_string.clear();
 	_matched_string = string;
 	if (_extra_matched_string != NULL)
 		*_extra_matched_string = _matched_string;
 	return (true);
 }
 
-void Expression::set_matched(std::string *matched)
-{
-	_extra_matched_string = matched;
-}
+// void Expression::set_matched(std::string *matched)
+// {
+// 	_extra_matched_string = matched;
+// }
 
 std::string Expression::get_matched()
 {
@@ -385,4 +444,11 @@ std::string Expression::get_matched()
 std::string Expression::get_remainder()
 {
 	return (_remainder_string);
+}
+
+int Expression::next_type(iterator_type it)
+{
+	if (it != _pattern_list.end() && (it + 1) != _pattern_list.end())
+		return ((it + 1)->type);
+	return (EXPRESSION_END);
 }

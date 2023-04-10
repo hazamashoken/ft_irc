@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 10:53:19 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/09 19:06:45 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/10 00:16:08 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ void test(Expression &e, std::string s)
 	if (e.match(s))
 		std::cout << "Match: " << e.get_matched() << std::endl;
 	else
-		std::cout << "No match" << std::endl;
+		std::cout << "No match: " << s << std::endl;
 }
 
 int main()
@@ -31,11 +31,16 @@ int main()
 	test(ip_address, "192.168.8.2");
 	test(ip_address, "abd124");
 
+	Expression shortname;
 	Expression hostname;
-	hostname.alnum(1).exp(Expression().any(".").alnum(1), 0);
+	//hostname.alnum(1).exp(Expression().any(".").alnum(1), 0);
+	shortname.alnum(1).exp(Expression().any("-", 0).alnum(1), 0);
+	hostname.exp(shortname).exp(Expression().any(".").exp(shortname, 1), 0);
 
 	test(hostname, "abc123");
 	test(hostname, "www.google.com");
+	test(hostname, "a-b-c.example.com");
+	test(hostname, "example-.com");
 	test(hostname, "www.");
 
 	Expression email;
