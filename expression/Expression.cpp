@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 10:19:58 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/10 02:00:22 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/10 12:38:53 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,21 +25,20 @@ Expression::Expression()
 	_extra_matched_string = NULL;
 }
 
-Expression::Expression(std::string *matched)
+Expression::Expression(std::string &matched)
 {
-	_extra_matched_string = matched;
+	_extra_matched_string = &matched;
 }
 
 Expression::Expression(Expression const &other)
 {
 	*this = other;
-	_extra_matched_string = NULL;
 }
 
-Expression::Expression(Expression const &other, std::string *matched)
+Expression::Expression(Expression const &other, std::string &matched)
 {
 	*this = other;
-	_extra_matched_string = matched;
+	_extra_matched_string = &matched;
 }
 
 Expression::~Expression()
@@ -81,7 +80,7 @@ Expression &Expression::operator=(Expression const &other)
 /*
  * match the string pattern min to max times
  */
-Expression &Expression::all(std::string pattern, size_t min, size_t max)
+Expression &Expression::all(std::string const pattern, size_t min, size_t max)
 {
 	struct Pattern p;
 
@@ -97,7 +96,7 @@ Expression &Expression::all(std::string pattern, size_t min, size_t max)
 /*
  * match the string pattern 1 time
  */
-Expression &Expression::all(std::string pattern)
+Expression &Expression::all(std::string const pattern)
 {
 	return (all(pattern, 1, 1));
 }
@@ -105,7 +104,7 @@ Expression &Expression::all(std::string pattern)
 /*
  * match any char in the string pattern min to max times
  */
-Expression &Expression::any(std::string pattern, size_t min, size_t max)
+Expression &Expression::any(std::string const pattern, size_t min, size_t max)
 {
 	struct Pattern p;
 
@@ -121,7 +120,7 @@ Expression &Expression::any(std::string pattern, size_t min, size_t max)
 /*
  * match any char in the string pattern 1 time
  */
-Expression &Expression::any(std::string pattern)
+Expression &Expression::any(std::string const pattern)
 {
 	return (any(pattern, 1, 1));
 }
@@ -130,7 +129,7 @@ Expression &Expression::any(std::string pattern)
  * adds the characters in string pattern to the last added pattern
  * only works if the last added is an ANY type pattern
  */
-Expression &Expression::add(std::string pattern)
+Expression &Expression::add(std::string const pattern)
 {
 	iterator_type it;
 
@@ -145,7 +144,7 @@ Expression &Expression::add(std::string pattern)
 /*
  * match any char not in the string pattern min to max times.
  */
-Expression &Expression::inv(std::string pattern, size_t min, size_t max)
+Expression &Expression::inv(std::string const pattern, size_t min, size_t max)
 {
 	std::string str;
 	char c;
@@ -166,7 +165,7 @@ Expression &Expression::inv(std::string pattern, size_t min, size_t max)
 /*
  * match any char not in the string pattern 1 time
  */
-Expression &Expression::inv(std::string pattern)
+Expression &Expression::inv(std::string const pattern)
 {
 	return (inv(pattern, 1, 1));
 }
@@ -193,6 +192,30 @@ Expression &Expression::exp(Expression const &expression, size_t min, size_t max
 Expression &Expression::exp(Expression const &expression)
 {
 	return (exp(expression, 1, 1));
+}
+
+/*
+ * match the expression min to max times with a different matched string
+ */
+Expression &Expression::exp(Expression const &expression, std::string &matched, size_t min, size_t max)
+{
+	struct Pattern p;
+
+	p.expression = new Expression(expression, matched);
+	p.expression->end();
+	p.min = min;
+	p.max = max;
+	p.type = EXPRESSION_EXP;
+	_pattern_list.push_back(p);
+	return (*this);	
+}
+
+/*
+ * match the expression 1 time with a different matched string
+ */
+Expression &Expression::exp(Expression const &expression, std::string &matched)
+{
+	return (exp(expression, matched, 1, 1));
 }
 
 /*
@@ -305,44 +328,44 @@ Expression &Expression::alnum()
 	return (alnum(1, 1));
 }
 
-/*
- * alpha numeric and irc special chars
- */
-Expression &Expression::alnumspec(size_t min, size_t max)
-{
-	return (alnum(min, max).add("-[]\\`^{}"));
-}
+// /*
+//  * alpha numeric and irc special chars
+//  */
+// Expression &Expression::alnumspec(size_t min, size_t max)
+// {
+// 	return (alnum(min, max).add("-[]\\`^{}"));
+// }
 
-Expression &Expression::alnumspec()
-{
-	return (alnumspec(1, 1));
-}
+// Expression &Expression::alnumspec()
+// {
+// 	return (alnumspec(1, 1));
+// }
 
-/*
- * any 8bit code except SPACE, NUL, CR and LF
- */
-Expression &Expression::nonwhite(size_t min, size_t max)
-{
-	return (inv(" \0\r\n", min, max));
-}
+// /*
+//  * any 8bit code except SPACE, NUL, CR and LF
+//  */
+// Expression &Expression::nonwhite(size_t min, size_t max)
+// {
+// 	return (inv(" \0\r\n", min, max));
+// }
 
-Expression &Expression::nonwhite()
-{
-	return (nonwhite(1, 1));
-}
+// Expression &Expression::nonwhite()
+// {
+// 	return (nonwhite(1, 1));
+// }
 
-/*
- * any 8bit code except SPACE, BEL, NUL, CR, LF and comma
- */
-Expression &Expression::chstring(size_t min, size_t max)
-{
-	return (inv(" \a\0\r\n,", min, max));
-}
+// /*
+//  * any 8bit code except SPACE, BEL, NUL, CR, LF and comma
+//  */
+// Expression &Expression::chstring(size_t min, size_t max)
+// {
+// 	return (inv(" \a\0\r\n,", min, max));
+// }
 
-Expression &Expression::chstring()
-{
-	return (chstring(1, 1));
-}
+// Expression &Expression::chstring()
+// {
+// 	return (chstring(1, 1));
+// }
 
 /*
  * try to match the expression to string
@@ -370,7 +393,7 @@ bool Expression::match(std::string string)
 		count = 0;
 		if (it->type == EXPRESSION_ALL && !jump)
 		{
-			while (current.find(it->pattern) == 0 && count < it->max)
+			while (count < it->max && current.find(it->pattern) == 0)
 			{
 				current = current.substr(it->pattern.size());
 				count++;
@@ -386,7 +409,7 @@ bool Expression::match(std::string string)
 		}
 		else if (it->type == EXPRESSION_EXP && !jump)
 		{
-			while (it->expression->match(current) && count < it->max)
+			while (count < it->max && it->expression->match(current))
 			{
 				current = it->expression->get_remainder();
 				count++;
@@ -408,8 +431,10 @@ bool Expression::match(std::string string)
 				*_extra_matched_string = _matched_string;
 			return (true);
 		}
+
 		// minimum patterns not read so the expression failed
-		if (count < it->min)
+		// don't test if expression is currently jumping
+		if (count < it->min && !jump)
 		{
 			// if next pattern is not jump then fail
 			if (next_type(it) != EXPRESSION_JMP)
@@ -431,17 +456,12 @@ bool Expression::match(std::string string)
 	return (true);
 }
 
-// void Expression::set_matched(std::string *matched)
-// {
-// 	_extra_matched_string = matched;
-// }
-
-std::string Expression::get_matched()
+std::string Expression::get_matched() const
 {
 	return (_matched_string);
 }
 
-std::string Expression::get_remainder()
+std::string Expression::get_remainder() const
 {
 	return (_remainder_string);
 }

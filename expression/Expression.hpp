@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 10:06:37 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/10 01:50:46 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/10 12:36:51 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,21 +20,23 @@ class Expression
 {
 	public:
 		Expression();
-		Expression(std::string *matched);
+		Expression(std::string &matched);
 		Expression(Expression const &other);
-		Expression(Expression const &other, std::string *matched);
+		Expression(Expression const &other, std::string &matched);
 		virtual ~Expression();
 		Expression &operator=(Expression const &other);
 
-		Expression &all(std::string pattern, size_t min, size_t max = SIZE_MAX);
-		Expression &all(std::string pattern);
-		Expression &any(std::string pattern, size_t min, size_t max = SIZE_MAX);
-		Expression &any(std::string pattern);
-		Expression &add(std::string pattern);
-		Expression &inv(std::string pattern, size_t min, size_t max = SIZE_MAX);
-		Expression &inv(std::string pattern);
+		Expression &all(std::string const pattern, size_t min, size_t max = SIZE_MAX);
+		Expression &all(std::string const pattern);
+		Expression &any(std::string const pattern, size_t min, size_t max = SIZE_MAX);
+		Expression &any(std::string const pattern);
+		Expression &add(std::string const pattern);
+		Expression &inv(std::string const pattern, size_t min, size_t max = SIZE_MAX);
+		Expression &inv(std::string const pattern);
 		Expression &exp(Expression const &expression, size_t min, size_t max = SIZE_MAX);
 		Expression &exp(Expression const &expression);
+		Expression &exp(Expression const &expression, std::string &matched, size_t min, size_t max = SIZE_MAX);
+		Expression &exp(Expression const &expression, std::string &matched);
 		Expression &jmp();
 		Expression &con();
 		Expression &end();
@@ -50,16 +52,15 @@ class Expression
 		Expression &alpha();
 		Expression &alnum(size_t min, size_t max = SIZE_MAX);
 		Expression &alnum();
-		Expression &alnumspec(size_t min, size_t max = SIZE_MAX);
-		Expression &alnumspec();
-		Expression &nonwhite(size_t min, size_t max = SIZE_MAX);
-		Expression &nonwhite();
-		Expression &chstring(size_t min, size_t max = SIZE_MAX);
-		Expression &chstring();
+		// Expression &alnumspec(size_t min, size_t max = SIZE_MAX);
+		// Expression &alnumspec();
+		// Expression &nonwhite(size_t min, size_t max = SIZE_MAX);
+		// Expression &nonwhite();
+		// Expression &chstring(size_t min, size_t max = SIZE_MAX);
+		// Expression &chstring();
 		bool match(std::string string);
-		//void set_matched(std::string *matched);
-		std::string get_matched();
-		std::string get_remainder();
+		std::string get_matched() const;
+		std::string get_remainder() const;
 
 	private:
 		struct Pattern
