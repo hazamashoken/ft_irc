@@ -6,13 +6,17 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 10:53:19 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/10 22:38:47 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/13 20:12:38 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Expression.hpp"
+#include "Message.hpp"
 #include <iostream>
 #include <string>
+
+#include "valid.hpp"
+#include "invalid.hpp"
 
 #define IRC_SPECIAL std::string("-[]\\`^{}")
 #define IRC_NONUSER std::string("\0\r\n @", 5)
@@ -113,6 +117,15 @@ int main()
 	testPrefix("nick4@irc4.example.com");
 	testPrefix("nick5!username5");
 	testPrefix("nick6@10.6.6.255");
+
+	Message m;
+
+	for (int i = 0; !g_valid[i].empty(); i++)
+		if (m.testHost(g_valid[i]) == false)
+			std::cout << "Valid error: " << g_valid[i] << std::endl;
+	for (int i = 0; !g_invalid[i].empty(); i++)
+		if (m.testHost(g_invalid[i]) == true)
+			std::cout << "Invalid error: " << g_invalid[i] << std::endl;
 
 	return (0);
 }

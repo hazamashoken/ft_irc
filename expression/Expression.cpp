@@ -6,19 +6,22 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 10:19:58 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/10 12:38:53 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/14 01:13:26 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Expression.hpp"
 #include <algorithm>
 
+#include <iostream>
+
 #define EXPRESSION_ANY 1
 #define EXPRESSION_ALL 2
 #define EXPRESSION_EXP 3
 #define EXPRESSION_JMP 4
-#define EXPRESSION_CON 5
-#define EXPRESSION_END 6
+#define EXPRESSION_JMPE 5
+#define EXPRESSION_CON 6
+#define EXPRESSION_END 7
 
 Expression::Expression()
 {
@@ -43,12 +46,7 @@ Expression::Expression(Expression const &other, std::string &matched)
 
 Expression::~Expression()
 {
-	iterator_type it;
-
-	for (it = _pattern_list.begin(); it != _pattern_list.end(); it++)
-		if (it->expression != NULL)
-			delete it->expression;
-	_pattern_list.clear();
+	clear();
 }
 
 Expression &Expression::operator=(Expression const &other)
@@ -58,18 +56,9 @@ Expression &Expression::operator=(Expression const &other)
 
 	if (this != &other)
 	{
-		_pattern_list.clear();
+		clear();
 		for (i = 0; i < other._pattern_list.size(); i++)
-		{
-			p.expression = NULL;
-			if (other._pattern_list[i].expression != NULL)
-				p.expression = new Expression(*other._pattern_list[i].expression);
-			p.pattern = other._pattern_list[i].pattern;
-			p.min = other._pattern_list[i].min;
-			p.max = other._pattern_list[i].max;
-			p.type = other._pattern_list[i].type;
-			_pattern_list.push_back(p);
-		}
+			clone_pattern(other._pattern_list[i]);
 		_matched_string = other._matched_string;
 		_remainder_string = other._remainder_string;
 		_extra_matched_string = other._extra_matched_string;
@@ -219,23 +208,6 @@ Expression &Expression::exp(Expression const &expression, std::string &matched)
 }
 
 /*
- * stop processing the expression
- */
-Expression &Expression::end()
-{
-	struct Pattern p;
-
-	if (_pattern_list.size() != 0 && _pattern_list.back().type == EXPRESSION_END)
-		return (*this);
-	p.expression = NULL;
-	p.min = 0;
-	p.max = 0;
-	p.type = EXPRESSION_END;
-	_pattern_list.push_back(p);
-	return (*this);	
-}
-
-/*
  * on success of the previous match jump to the next con
  */
 Expression &Expression::jmp()
@@ -251,6 +223,21 @@ Expression &Expression::jmp()
 }
 
 /*
+ * on success of the previous match and input string is empty then jump
+ */
+Expression &Expression::jmpe()
+{
+	struct Pattern p;
+
+	p.expression = NULL;
+	p.min = 0;
+	p.max = 0;
+	p.type = EXPRESSION_JMPE;
+	_pattern_list.push_back(p);
+	return (*this);	
+}
+
+/*
  * continue processing from the previous jump
  */
 Expression &Expression::con()
@@ -261,6 +248,23 @@ Expression &Expression::con()
 	p.min = 0;
 	p.max = 0;
 	p.type = EXPRESSION_CON;
+	_pattern_list.push_back(p);
+	return (*this);	
+}
+
+/*
+ * stop processing the expression and return the remainder
+ */
+Expression &Expression::end()
+{
+	struct Pattern p;
+
+	if (_pattern_list.size() != 0 && _pattern_list.back().type == EXPRESSION_END)
+		return (*this);
+	p.expression = NULL;
+	p.min = 0;
+	p.max = 0;
+	p.type = EXPRESSION_END;
 	_pattern_list.push_back(p);
 	return (*this);	
 }
@@ -377,8 +381,9 @@ bool Expression::match(std::string string)
 	iterator_type it;
 	std::string previous;
 	std::string current;
-	bool jump;
 	size_t count;
+	bool jump;
+	int next;
 
 	// set all matched strings to empty
 	_matched_string.clear();
@@ -419,6 +424,10 @@ bool Expression::match(std::string string)
 		{
 			jump = true;
 		}
+		else if (it->type == EXPRESSION_JMPE)
+		{
+			jump = true;
+		}
 		else if (it->type == EXPRESSION_CON)
 		{
 			jump = false;
@@ -432,22 +441,34 @@ bool Expression::match(std::string string)
 			return (true);
 		}
 
-		// minimum patterns not read so the expression failed
-		// don't test if expression is currently jumping
-		if (count < it->min && !jump)
+		if (!jump)
 		{
-			// if next pattern is not jump then fail
-			if (next_type(it) != EXPRESSION_JMP)
-				return (false);
-			// skip the next jump instruction
-			it++;
-			// roll back the changes to the string
-			current = previous;
+			next = next_type(it);
+			// minimum patterns not read so the pattern failed
+			if (count < it->min)
+			{
+				// fail if there is no jump
+				if (next != EXPRESSION_JMP && next != EXPRESSION_JMPE)
+					return (false);
+				// next pattern is jmp then roll back changes and skip
+				current = previous;
+				it++;
+			}
+			else
+			{
+				// if read successful and next is jmpe check if string is empty
+				if (next == EXPRESSION_JMPE && !current.empty())
+				{
+					// next pattern is jmpe then roll back changes and skip
+					current = previous;
+					it++;
+				}
+			}
 		}
 		// reading this pattern is done so commit changes
 		previous = current;
 	}
-	if (current.size() != 0)
+	if (!current.empty())
 		return (false);
 	_remainder_string.clear();
 	_matched_string = string;
@@ -466,6 +487,42 @@ std::string Expression::get_remainder() const
 	return (_remainder_string);
 }
 
+/*
+ * deletes all data in the expression
+ */
+void Expression::clear()
+{
+	iterator_type it;
+
+	for (it = _pattern_list.begin(); it != _pattern_list.end(); it++)
+		if (it->expression != NULL)
+			delete it->expression;
+	_pattern_list.clear();
+	_matched_string.clear();
+	_remainder_string.clear();
+	_extra_matched_string = NULL;
+}
+
+/*
+ * clone a pattern and push it onto _pattern_list
+ */
+void Expression::clone_pattern(struct Pattern const &other)
+{
+	struct Pattern p;
+
+	p.expression = NULL;
+	if (other.expression != NULL)
+		p.expression = new Expression(*(other.expression));
+	p.pattern = other.pattern;
+	p.min = other.min;
+	p.max = other.max;
+	p.type = other.type;
+	_pattern_list.push_back(p);
+}
+
+/*
+ * returns the type of pattern after the iterator
+ */
 int Expression::next_type(iterator_type it)
 {
 	if (it != _pattern_list.end() && (it + 1) != _pattern_list.end())
