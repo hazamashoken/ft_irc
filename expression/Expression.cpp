@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 10:19:58 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/14 01:13:26 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/14 18:37:37 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -331,45 +331,6 @@ Expression &Expression::alnum()
 {
 	return (alnum(1, 1));
 }
-
-// /*
-//  * alpha numeric and irc special chars
-//  */
-// Expression &Expression::alnumspec(size_t min, size_t max)
-// {
-// 	return (alnum(min, max).add("-[]\\`^{}"));
-// }
-
-// Expression &Expression::alnumspec()
-// {
-// 	return (alnumspec(1, 1));
-// }
-
-// /*
-//  * any 8bit code except SPACE, NUL, CR and LF
-//  */
-// Expression &Expression::nonwhite(size_t min, size_t max)
-// {
-// 	return (inv(" \0\r\n", min, max));
-// }
-
-// Expression &Expression::nonwhite()
-// {
-// 	return (nonwhite(1, 1));
-// }
-
-// /*
-//  * any 8bit code except SPACE, BEL, NUL, CR, LF and comma
-//  */
-// Expression &Expression::chstring(size_t min, size_t max)
-// {
-// 	return (inv(" \a\0\r\n,", min, max));
-// }
-
-// Expression &Expression::chstring()
-// {
-// 	return (chstring(1, 1));
-// }
 
 /*
  * try to match the expression to string

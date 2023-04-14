@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 10:06:37 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/14 00:17:51 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/14 18:36:56 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,12 +53,6 @@ class Expression
 		Expression &alpha();
 		Expression &alnum(size_t min, size_t max = SIZE_MAX);
 		Expression &alnum();
-		// Expression &alnumspec(size_t min, size_t max = SIZE_MAX);
-		// Expression &alnumspec();
-		// Expression &nonwhite(size_t min, size_t max = SIZE_MAX);
-		// Expression &nonwhite();
-		// Expression &chstring(size_t min, size_t max = SIZE_MAX);
-		// Expression &chstring();
 		bool match(std::string string);
 		std::string get_matched() const;
 		std::string get_remainder() const;
