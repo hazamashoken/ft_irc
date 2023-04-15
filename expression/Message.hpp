@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/27 09:24:28 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/14 19:52:15 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/15 18:43:19 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,12 +16,15 @@
 # include <string>
 # include "Expression.hpp"
 
-# define IRC_INVM 1
+# define IRC_INVALID 1
 # define IRC_PASS 2
 # define IRC_NICK 3
 # define IRC_USER 4
 # define IRC_OPER 5
 # define IRC_MODE 6
+# define IRC_SERVICE 7
+# define IRC_QUIT 8
+# define IRC_SQUIT 9
 
 class Message
 {
@@ -40,11 +43,14 @@ class Message
         std::string getUnused() const;
         std::string getRealname() const;
         std::string getMode() const;
+        std::string getWildname() const;
+        std::string getInfo() const;
         int getMsgType(std::string message);
         std::string getMsgStr() const;
 
     private:
         void expressionInitHostaddr();
+        void expressionInitChannel();
         void expressionInit();
         void messageInit();
 
@@ -84,6 +90,15 @@ class Message
         Expression _modeExp;
         std::string _modeStr;
 
+        Expression _wildnameExp;
+        std::string _wildnameStr;
+
+        Expression _infoExp;
+        std::string _infoStr;
+
+        Expression _channelExp;
+        std::string _channelStr;
+
         std::string _messageStr;
 
         Expression _passMsgExp;
@@ -91,6 +106,9 @@ class Message
         Expression _userMsgExp;
         Expression _operMsgExp;
         Expression _modeMsgExp;
+        Expression _serviceMsgExp;
+        Expression _quitMsgExp;
+        Expression _squitMsgExp;
 };
 
 #endif

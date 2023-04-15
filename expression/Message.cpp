@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/27 09:33:08 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/14 19:52:28 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/15 19:00:26 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #define IRC_NONPASS std::string("\0\r\n \t", 5)
 #define IRC_NONPARAM std::string("\0\r\n :", 5)
 #define IRC_NONREAL std::string("\0\r\n:", 4)
+#define IRC_NONCHANNEL std::string("\0\a\r\n ,:")
 
 Message::Message()
 {
@@ -83,6 +84,18 @@ void Message::expressionInitHostaddr()
     _hostaddrExp.exp(ip4addr).jmp().exp(ip6addr);
 }
 
+void Message::expressionInitChannel()
+{
+    Expression channelID;
+    channelID.all("!").upper(5, 5).add("0123456789");
+
+    Expression channel;
+    channel.exp(channelID).jmp();
+    channel.any("#+&").con();
+    channel.inv(IRC_NONCHANNEL, 1);
+    channel.exp(Expression().any(":").inv(IRC_NONCHANNEL, 1), 0, 1);
+}
+
 void Message::expressionInit()
 {
     // nickname expression
@@ -128,13 +141,21 @@ void Message::expressionInit()
     _unusedExp = Expression(_unusedStr);
     _unusedExp.inv(IRC_NONPARAM, 1);
 
-    // unused expression
+    // realname expression
     _realnameExp = Expression(_realnameStr);
     _realnameExp.inv(IRC_NONREAL, 1);
 
     // mode expression
     _modeExp = Expression(_modeStr);
     _modeExp.any("+-").any("iwoOrs");
+
+    // wildname expression
+    _wildnameExp = Expression(_wildnameStr);
+    _wildnameExp.alnum(1).add(".*?\\");
+
+    // info expression
+    _infoExp = Expression(_infoStr);
+    _infoExp.inv(IRC_NONREAL, 1);
 }
 
 void Message::messageInit()
@@ -162,6 +183,24 @@ void Message::messageInit()
     // MODE message
     _modeMsgExp = Expression(_messageStr);
     _modeMsgExp.all("MODE ").exp(_modeExp).all("\r\n");
+
+    // SERVICE message
+    _serviceMsgExp = Expression(_messageStr);
+    _serviceMsgExp.all("SERVICE ").exp(_nicknameExp);
+    _serviceMsgExp.all(" ").exp(_unusedExp);
+    _serviceMsgExp.all(" ").exp(_wildnameExp);
+    _serviceMsgExp.all(" ").exp(_unusedExp);
+    _serviceMsgExp.all(" ").exp(_unusedExp);
+    _serviceMsgExp.all(" :").exp(_infoExp).all("\r\n");
+
+    // QUIT message
+    _quitMsgExp = Expression(_messageStr);
+    _quitMsgExp.all("QUIT :").exp(_infoExp).all("\r\n");
+
+    // SQUIT message
+    _squitMsgExp = Expression(_messageStr);
+    _squitMsgExp.all("SQUIT ").exp(_servernameExp);
+    _squitMsgExp.all(" :").exp(_infoExp).all("\r\n");
 }
 
 std::string Message::getNickname() const
@@ -224,6 +263,16 @@ std::string Message::getMode() const
     return(_modeStr);
 }
 
+std::string Message::getWildname() const
+{
+    return(_wildnameStr);
+}
+
+std::string Message::getInfo() const
+{
+    return(_infoStr);
+}
+
 int Message::getMsgType(std::string message)
 {
     if (_passMsgExp.match(message))
@@ -236,7 +285,13 @@ int Message::getMsgType(std::string message)
         return (IRC_OPER);
     if (_modeMsgExp.match(message))
         return (IRC_MODE);
-    return (IRC_INVM);
+    if (_serviceMsgExp.match(message))
+        return (IRC_SERVICE);
+    if (_quitMsgExp.match(message))
+        return (IRC_QUIT);
+    if (_squitMsgExp.match(message))
+        return (IRC_SQUIT);
+    return (IRC_INVALID);
 }
 
 std::string Message::getMsgStr() const

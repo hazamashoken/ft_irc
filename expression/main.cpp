@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/07 10:53:19 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/14 19:51:21 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/15 17:33:43 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -129,6 +129,12 @@ int main()
 		std::cout << "msg: " << m.getMsgStr() << " oper: " << m.getUser() << "|" << m.getPassword() << std::endl;
 	if (m.getMsgType("MODE +w\r\n") == IRC_MODE)
 		std::cout << "msg: " << m.getMsgStr() << " mode: " << m.getMode() << std::endl;
+	if (m.getMsgType("SERVICE dict * *.fr 0 0 :French Dictionary\r\n") == IRC_SERVICE)
+		std::cout << "msg: " << m.getMsgStr() << " service: " << m.getNickname() << "|" << m.getWildname() << "|" << m.getInfo() << std::endl;
+	if (m.getMsgType("QUIT :Gone to have lunch\r\n") == IRC_QUIT)
+		std::cout << "msg: " << m.getMsgStr() << " quit: " << m.getInfo() << std::endl;
+	if (m.getMsgType("SQUIT tolsun.oulu.fi :Bad Link\r\n") == IRC_SQUIT)
+		std::cout << "msg: " << m.getMsgStr() << " squit: " << m.getServername() << "|" << m.getInfo() << std::endl;
 
 	return (0);
 }
