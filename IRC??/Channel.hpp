@@ -19,6 +19,7 @@ public:
 	void removeClient(Client* client);
 	bool hasClient(Client* client) const;
 	void sendMessage(Client* sender, const std::string& message);
+	void sendToAllClients(const std::string& message);
 	const std::map<const std::string, Client*>& getClients() const;
 	std::map<const std::string, Client*>::iterator getClientsBegin();
 

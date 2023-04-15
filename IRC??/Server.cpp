@@ -136,11 +136,20 @@ void Server::handleClient(Client *client)
 	debug("line: " + line);
 	if (line.find("\r\n") == std::string::npos)
 		return ;
-	command = line.substr(0, line.find(" "));
-	args = ft_split(line.substr(line.find(" ") + 1, line.find("\r\n") - line.find(" ") - 1), " ");
+	client->setReadBuffer(line.substr(line.find("\r\n") + 2, line.size()));
+	while (line.find("\r\n") != std::string::npos)
+	{
+		debug("line: " + line);
+		line = line.substr(line.find("\r\n") + 2, line.size());
+		command = line.substr(0, line.find(" "));
+		args = ft_split(line.substr(line.find(" ") + 1, line.size()), " ");
+		debug("command: " + command);
+		debug("args: " + args[0]);
+		executeCommand(client, command, args);
+	}
 
-	debug("command: " + command);
-	debug("args: " + args[0]);
+	// debugSendToAllClients(line);
+
 }
 
 Client* Server::getClientByNickname(const std::string& nickname)
@@ -169,9 +178,64 @@ Channel* Server::getChannelByName(const std::string& channelName)
 
 void Server::executeCommand(Client* client, const std::string& command, const std::vector<std::string>& args)
 {
-	(void)client;
-	(void)command;
-	(void)args;
+	// (void)client;
+	// (void)command;
+	// (void)args;
+	if (command == "PING")
+	{
+		debug("cmd: PING");
+		client->sendReply("PONG", args[0]);
+	} else if (command == "USER")
+	{
+		debug("cmd: USER");
+		client->setUsername(args[0]);
+		debug("cmd: USER 1" + args[0]);
+		client->setHostname(args[1]);
+		debug("cmd: USER 2" + args[1]);
+		client->setServername(args[2]);
+		debug("cmd: USER 3" + args[2]);
+		client->setRealname(args[3]);
+		debug("cmd: USER 4" + args[3]);
+		client->sendReply("001", client->getNickname() + " :Welcome to the Internet Relay Network " + client->getNickname());
+		client->sendReply("002", client->getNickname() + " :Your host is " + client->getServername());
+	} else if (command == "NICK")
+	{
+		debug("cmd: NICK");
+		client->setNickname(args[0]);
+	} else if (command == "JOIN")
+	{
+		debug("cmd: JOIN");
+		std::string channelName = args[0];
+		if (channelName[0] != '#')
+			return ;
+		Channel *channel = getChannelByName(channelName);
+		if (channel == NULL)
+		{
+			channel = new Channel(channelName);
+			__channels.insert(std::pair<std::string, Channel *>(channelName, channel));
+		}
+		channel->addClient(client);
+	} else if (command == "PRIVMSG")
+	{
+		debug("cmd: PRIVMSG");
+		std::string channelName = args[0];
+		if (channelName[0] != '#')
+			return ;
+		Channel *channel = getChannelByName(channelName);
+		if (channel == NULL)
+			return ;
+		channel->sendToAllClients(client->getNickname() + " PRIVMSG " + channelName + " :" + args[1]);
+	} else if (command == "PART")
+	{
+		debug("cmd: PART");
+		std::string channelName = args[0];
+		if (channelName[0] != '#')
+			return ;
+		Channel *channel = getChannelByName(channelName);
+		if (channel == NULL)
+			return ;
+		channel->removeClient(client);
+	}
 }
 
 void Server::disconnectClient(Client *client)
@@ -183,4 +247,14 @@ void Server::disconnectClient(Client *client)
 		++it;
 	}
 	__clients.erase(client->getFd());
+}
+
+void Server::debugSendToAllClients(const std::string& message)
+{
+	std::map<int, Client *>::iterator it = __clients.begin();
+	while (it != __clients.end())
+	{
+		send(it->second->getFd(), message.c_str(), message.size(), 0);
+		++it;
+	}
 }

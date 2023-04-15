@@ -76,6 +76,14 @@ void Client::setRealname(const std::string& newRealname) {
 	__realname = newRealname;
 }
 
+void Client::setHostname(const std::string& newHostname) {
+	__hostname = newHostname;
+}
+
+void Client::setServername(const std::string& newServername) {
+	__servername = newServername;
+}
+
 const std::string& Client::getNickname() const {
 	return __nickname;
 }
@@ -88,9 +96,18 @@ const std::string& Client::getRealname() const {
 	return __realname;
 }
 
+const std::string& Client::getHostname() const {
+	return __hostname;
+}
+
+const std::string& Client::getServername() const {
+	return __servername;
+}
+
 const std::string& Client::getReadBuffer() const {
 	return __readBuffer;
 }
+
 
 bool Client::isAliveClient() {
 	char buffer[1024];
@@ -104,4 +121,16 @@ bool Client::isAliveClient() {
 
 int Client::getFd() const {
 	return __socket;
+}
+
+void Client::sendReply(const std::string& reply) {
+	send(__socket, reply.c_str(), reply.length(), 0);
+}
+
+void Client::sendReply(const std::string& reply, const std::string& message) {
+	send(__socket, (reply + " " + message + "\r\n").c_str(), reply.length() + message.length() + 1, 0);
+}
+
+void Client::setReadBuffer(const std::string& newReadBuffer) {
+	__readBuffer = newReadBuffer;
 }

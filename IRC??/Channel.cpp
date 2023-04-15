@@ -52,3 +52,12 @@ std::map<const std::string, Client*>::iterator Channel::getClientsBegin() {
 	// Implementation
 	return __clients.begin();
 }
+
+void Channel::sendToAllClients(const std::string& message) {
+	// Implementation
+	std::map<std::string, Client*>::iterator it = __clients.begin();
+	while (it != __clients.end()) {
+		send(it->second->getFd(), message.c_str(), message.length(), 0);
+		it++;
+	}
+}

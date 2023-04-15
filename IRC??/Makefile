@@ -18,4 +18,7 @@ fclean: clean
 
 re: fclean all
 
+run:	$(NAME)
+	./$(NAME) 6667 password
+
 .PHONY: all clean fclean re

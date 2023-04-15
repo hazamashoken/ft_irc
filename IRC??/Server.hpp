@@ -33,6 +33,7 @@ class Server
 		Client* getClientByNickname(const std::string& nickname);
 		Channel* getChannelByName(const std::string& channelName);
 		void executeCommand(Client* client, const std::string& command, const std::vector<std::string>& args);
+
 		static std::map<std::string, Channel *> __channels;
 
 	private:
@@ -43,4 +44,6 @@ class Server
 		int __addrlen;
 		std::vector<pollfd> __pfds;
 		std::map<int, Client *> __clients;
+
+		void debugSendToAllClients(const std::string& message);
 };
