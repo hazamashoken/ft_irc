@@ -1,72 +1,49 @@
 #pragma once
 
-# include "utils.hpp"
-// # include "../cmd/Cmd.hpp"
-
-# include <map>
 # include <iostream>
-# include <ctime>
 # include <string>
-# include <vector>
-# include <netinet/in.h>
-# include <fcntl.h>
-# include <unistd.h>
+# include <map>
+# include <cstring>
+# include <cstdlib>
+# include <sys/types.h>
 # include <sys/socket.h>
 # include <netinet/in.h>
+# include <unistd.h>
+# include <fcntl.h>
 # include <arpa/inet.h>
-# include <netdb.h>
 
-# define KILLED		-2
-# define INIT		-1
-# define DELETE		0
-# define PASSWORD	1
-# define REGISTER	2
-# define ONLINE		3
+# include "utils.hpp"
 
 class Server;
-class Client
-{
-	private:
-		bool		_op;
-		int			_fd;
-		int			_status;
-		int			_last_ping;
+class Channel;
 
-		std::string	_buffer_receive;
-		std::string	_buffer_to_send;
+class Client {
+public:
+	Client(const int fd, struct sockaddr_in addr);
+	~Client();
 
-		std::string	_nickname;
-		std::string	_username;
-		std::string	_realname;
-		std::string	_hostaddr;
-		std::string	_hostname;
+	void sendMessage(Client *target, const std::string& message);
+	void sendMessage(Channel *channel, const std::string& message);
+	void joinChannel(const std::string& channelName);
+	void partChannel(const std::string& channelName);
+	void setNickname(const std::string& newNickname);
+	void setUsername(const std::string& newUsername);
+	void setRealname(const std::string& newRealname);
+	const std::string& getNickname() const;
+	const std::string& getUsername() const;
+	const std::string& getRealname() const;
+	const std::string& getReadBuffer() const;
+	int getFd() const;
+	bool isAliveClient();
 
-	public:
-		Client(const int fd, struct sockaddr_in addr);
-		virtual ~Client();
-
-		void	write_buffer(const std::string &str);
-		void	write_to(Client &c, const std::string &msg);
-		// virtual ssize_t	send_buffer(void);
-		// virtual void	receive(Server *server);
-
-		void	set_status(const int status);
-		void	set_last_ping(const int last_ping);
-		void	set_nickname(const std::string &nickname);
-		void	set_username(const std::string &username);
-		void	set_realname(const std::string &realname);
-
-		bool	is_operator();
-		void	promote_as_op();
-
-		int					get_fd(void) const;
-		int					get_status(void) const;
-		int					get_last_ping(void) const;
-		const std::string	&get_nickname(void) const;
-		const std::string	&get_host(void) const;
-		std::string			get_prefix(void) const;
-		const std::string	&get_username(void) const;
-		const std::string	&get_realname(void) const;
+private:
+	int __socket;
+	struct sockaddr_in __address;
+	std::string __nickname;
+	std::string __username;
+	std::string __realname;
+	std::map<std::string, Channel*> __currentChannels;
+	std::string __readBuffer;
 };
 
 

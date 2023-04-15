@@ -1,5 +1,8 @@
 # include "Server.hpp"
 # include "Client.hpp"
+# include "Channel.hpp"
+
+std::map<std::string, Channel *> Server::__channels;
 
 Server::Server(const char *port, const char *pass)
 : __port(std::string(port)), __pass(std::string(pass)), __addrlen(sizeof(__server_addr))
@@ -9,7 +12,6 @@ Server::Server(const char *port, const char *pass)
 
 Server::~Server()
 {
-	close(__server_fd);
 	{
 		std::map<int, Client *>::iterator it = __clients.begin();
 		while (it != __clients.end())
@@ -18,14 +20,15 @@ Server::~Server()
 			++it;
 		}
 	}
-	// {
-	// 	std::map<std::string, Channel *>::iterator it = __channels.begin();
-	// 	while (it != __channels.end())
-	// 	{
-	// 		delete it->second;
-	// 		++it;
-	// 	}
-	// }
+	{
+		std::map<std::string, Channel *>::iterator it = __channels.begin();
+		while (it != __channels.end())
+		{
+			delete it->second;
+			++it;
+		}
+	}
+	close(__server_fd);
 }
 
 void Server::initializeServer()
@@ -65,7 +68,14 @@ bool Server::acceptNewClient()
 	if (new_client_fd == -1)
 		return(error("accept() failed", 1));
 	__clients.insert(std::pair<int, Client *>(new_client_fd, new Client(new_client_fd, new_client_addr)));
-	std::cout << "new client: " << new_client_fd << std::endl;
+	if (DEBUG)
+	{
+		std::stringstream ss;
+		ss <<  new_client_fd;
+		std::string str = ss.str();
+		debug(std::string("new client: ") + str);
+	}
+	__pfds.push_back((pollfd){new_client_fd, POLLIN | POLLHUP, 0});
 	return (0);
 }
 
@@ -76,35 +86,101 @@ void Server::processClients()
 		perror("poll failed");
 		exit(EXIT_FAILURE);
 	}
-	for (int i = 0; i < __pfds.size(); ++i) {
+	for (size_t i = 0; i < __pfds.size(); ++i) {
+		// if (DEBUG)
+		// {
+		// 	std::ostringstream o;
+		// 	o << "__pfds: " << __pfds[i].fd << " " << __pfds[i].revents;
+		// 	debug(o);
+		// }
 		if (__pfds[i].revents & POLLIN) {
 			if (__pfds[i].fd == __server_fd) {
 				if (acceptNewClient())
 					error("acceptNewClient() failed");
 			} else {
-				// handle client
+				debug("client detected");
+				if (__clients[__pfds[i].fd]->isAliveClient() == false)
+				{
+					debug("client closed");
+					disconnectClient(__clients[__pfds[i].fd]);
+					close(__pfds[i].fd);
+					__pfds.erase(__pfds.begin() + i);
+					continue ;
+				}
+				debug("client handled");
+				handleClient(__clients[__pfds[i].fd]);
 			}
+		} else if (__pfds[i].revents & POLLHUP) {
+			// Connection closed
+			debug("client closed");
+			disconnectClient(__clients[__pfds[i].fd]);
+			close(__pfds[i].fd);
+			__pfds.erase(__pfds.begin() + i);
+			break ;
 		}
 	}
 }
 
-// void Server::handleClient(Client *client)
-// {
+void Server::handleClient(Client *client)
+{
+	std::string command;
+	std::vector<std::string> args;
+	std::string line;
 
-// }
+	if (client->getReadBuffer().empty())
+	{
+		debug("empty read buffer");
+		return ;
+	}
+	line = client->getReadBuffer();
+	debug("line: " + line);
+	if (line.find("\r\n") == std::string::npos)
+		return ;
+	command = line.substr(0, line.find(" "));
+	args = ft_split(line.substr(line.find(" ") + 1, line.find("\r\n") - line.find(" ") - 1), " ");
 
-// Client* getClientByNickname(const std::string& nickname)
-// {
+	debug("command: " + command);
+	debug("args: " + args[0]);
+}
 
-// }
+Client* Server::getClientByNickname(const std::string& nickname)
+{
+	std::map<int, Client *>::iterator it = __clients.begin();
+	while (it != __clients.end())
+	{
+		if (it->second->getNickname() == nickname)
+			return (it->second);
+		++it;
+	}
+	return (NULL);
+}
 
-// Channel* Server::getChannelByName(const std::string& channelName)
-// {
+Channel* Server::getChannelByName(const std::string& channelName)
+{
+	std::map<std::string, Channel *>::iterator it = __channels.begin();
+	while (it != __channels.end())
+	{
+		if (it->second->getName() == channelName)
+			return (it->second);
+		++it;
+	}
+	return (NULL);
+}
 
-// }
+void Server::executeCommand(Client* client, const std::string& command, const std::vector<std::string>& args)
+{
+	(void)client;
+	(void)command;
+	(void)args;
+}
 
-// void Server::executeCommand(Client* client, const std::string& command, const std::vector<std::string>& args)
-// {
-
-// }
-
+void Server::disconnectClient(Client *client)
+{
+	std::map<std::string, Channel *>::iterator it = __channels.begin();
+	while (it != __channels.end())
+	{
+		it->second->removeClient(client);
+		++it;
+	}
+	__clients.erase(client->getFd());
+}

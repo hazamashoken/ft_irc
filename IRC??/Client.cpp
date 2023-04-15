@@ -1,106 +1,107 @@
 # include "Client.hpp"
+# include "Server.hpp"
+# include "Channel.hpp"
 
 Client::Client(const int fd, struct sockaddr_in addr)
-: _op(false), _fd(fd), _status(INIT), _last_ping(std::time(NULL))
-{
-	fcntl(fd, F_SETFL, O_NONBLOCK);
+: __socket(fd), __address(addr)
+{}
 
-	_hostaddr = inet_ntoa(addr.sin_addr);
+Client::~Client() {}
 
-	char tmp[NI_MAXHOST];
-	if (getnameinfo((struct sockaddr *)&addr, sizeof(addr), tmp, NI_MAXHOST,
-				NULL, 0, NI_NUMERICSERV))
-		error("getnameinfo() failed");
-	else
-		_hostname = tmp;
-
-	debug("CLIENT", "created");
+void Client::sendMessage(Client *target, const std::string& message) {
+	// Implementation
+	send(target->__socket, message.c_str(), message.length(), 0);
 }
 
-Client::~Client()
-{
-	close(_fd);
-
-	debug("CLIENT", "destroyed");
-}
-
-void	Client::set_status(const int status)
-{
-	if (DEBUG)
-		std::cerr << s_debug("CLIENT", "set_status\t(")
-			<< this->_status << " -> " << status << ')'
-			<< ANSI::reset << std::endl;
-	this->_status = status;
-}
-
-void	Client::set_last_ping(const int last_ping)
-{ this->_last_ping = last_ping; }
-
-void	Client::set_nickname(const std::string &nickname)
-{ this->_nickname = nickname; }
-
-void	Client::set_username(const std::string &username)
-{ this->_username = username; }
-
-void	Client::set_realname(const std::string &realname)
-{ this->_realname = realname; }
-
-int		Client::get_fd(void) const
-{ return (this->_fd); }
-
-int		Client::get_status(void) const
-{ return (this->_status); }
-
-int		Client::get_last_ping(void) const
-{ return (this->_last_ping); }
-
-const std::string	&Client::get_nickname(void) const
-{ return (this->_nickname); }
-
-const std::string	&Client::get_username(void) const
-{ return (this->_username); }
-
-const std::string	&Client::get_realname(void) const
-{ return (this->_realname); }
-
-const std::string	&Client::get_host(void) const
-{
-	if (!this->_hostname.size())
-		return (this->_hostaddr);
-	return (this->_hostname);
-}
-
-std::string Client::get_prefix(void) const
-{
-	if (_status != ONLINE || !get_host().length())
-	{
-		if (_nickname.size())
-			return (_nickname);
-		return (std::string(""));
+void Client::sendMessage(Channel *channel, const std::string& message) {
+	// Implementation
+	std::map<const std::string, Client *>::iterator it = channel->getClientsBegin();
+	while (it != channel->getClients().end()) {
+		send(it->second->__socket, message.c_str(), message.length(), 0);
+		it++;
 	}
-
-	std::string prefix = _nickname;
-
-	if (_username.length())
-		prefix += "!" + _username;
-	prefix += "@" + get_host();
-
-	return (prefix);
 }
 
-void	Client::write_buffer(const std::string &str)
-{
-	_buffer_to_send += str + "\r\n";
+void Client::joinChannel(const std::string& channelName) {
+	// check if client is already in channel
+	{
+		std::map<std::string, Channel *>::iterator it = __currentChannels.find(channelName);
+		if (it != __currentChannels.end()) {
+			return;
+		}
+	}
+	// check if channel exists
+	{
+		std::map<std::string, Channel *>::iterator it = Server::__channels.find(channelName);
+		if (it == Server::__channels.end()) {
+			Channel *newChannel = new Channel(channelName);
+			Server::__channels.insert(std::pair<std::string, Channel *>(channelName, newChannel));
+			newChannel->addClient(this);
+		} else {
+			it->second->addClient(this);
+		}
+	}
+	// add channel to client's currentChannels
+	__currentChannels.insert(std::pair<std::string, Channel *>(channelName, Server::__channels[channelName]));
 }
 
-void	Client::write_to(Client &c, const std::string &msg)
-{
-	c.write_buffer(":" + get_prefix() + " " + msg);
+void Client::partChannel(const std::string& channelName) {
+	// check if client is in channel
+	std::map<std::string, Channel *>::iterator it = __currentChannels.find(channelName);
+	if (it == __currentChannels.end()) {
+		return;
+	}
+	// remove channel from client's currentChannels
+	__currentChannels.erase(it);
+	// remove client from channel's clients
+	Server::__channels[channelName]->removeClient(this);
+	// check if channel is empty
+	if (Server::__channels[channelName]->getClients().size() == 0) {
+		// delete channel
+		delete Server::__channels[channelName];
+		// remove channel from Server::__channels
+		Server::__channels.erase(channelName);
+	}
 }
 
-bool Client::is_operator()
-{ return (_op); }
+void Client::setNickname(const std::string& newNickname) {
+	__nickname = newNickname;
+}
 
-void Client::promote_as_op()
-{ _op = true; }
+void Client::setUsername(const std::string& newUsername) {
+	__username = newUsername;
+}
 
+void Client::setRealname(const std::string& newRealname) {
+	__realname = newRealname;
+}
+
+const std::string& Client::getNickname() const {
+	return __nickname;
+}
+
+const std::string& Client::getUsername() const {
+	return __username;
+}
+
+const std::string& Client::getRealname() const {
+	return __realname;
+}
+
+const std::string& Client::getReadBuffer() const {
+	return __readBuffer;
+}
+
+bool Client::isAliveClient() {
+	char buffer[1024];
+	int bytes = recv(__socket, buffer, 1024, 0);
+	if (bytes == 0) {
+		return false;
+	}
+	__readBuffer.append(buffer, bytes);
+	return true;
+}
+
+int Client::getFd() const {
+	return __socket;
+}

@@ -1,7 +1,7 @@
 # pragma once
 
 # ifndef DEBUG
-#  define DEBUG	0
+#  define DEBUG	1
 # endif
 
 # define INDENT_TIME	7
@@ -22,6 +22,7 @@ int					error(const std::string &str, const int ret);
 void				error(const std::string &str);
 void				debug(const std::string &str);
 void				debug(const std::string &src, const std::string &str);
+void				debug(const std::ostream& str);
 std::string			s_debug(const std::string &str);
 std::string			s_debug(const std::string &src, const std::string &str);
 void				time(const int time);

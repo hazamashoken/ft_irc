@@ -1,6 +1,7 @@
 # pragma once
 
 # include <iostream>
+# include <ostream>
 # include <string>
 # include <map>
 # include <vector>
@@ -17,6 +18,7 @@
 # include "ANSI.hpp"
 
 class Client;
+class Channel;
 class Server
 {
 	public:
@@ -26,19 +28,19 @@ class Server
 		void initializeServer();
 		bool acceptNewClient();
 		void processClients();
-		// void handleClient(Client *client);
-		// Client* getClientByNickname(const std::string& nickname);
-		// Channel* getChannelByName(const std::string& channelName);
-		// void executeCommand(Client* client, const std::string& command, const std::vector<std::string>& args);
+		void disconnectClient(Client *client);
+		void handleClient(Client *client);
+		Client* getClientByNickname(const std::string& nickname);
+		Channel* getChannelByName(const std::string& channelName);
+		void executeCommand(Client* client, const std::string& command, const std::vector<std::string>& args);
+		static std::map<std::string, Channel *> __channels;
 
 	private:
 		int __server_fd;
-		int __addrlen;
-		struct sockaddr_in __server_addr;
 		std::string __port;
 		std::string __pass;
+		struct sockaddr_in __server_addr;
+		int __addrlen;
 		std::vector<pollfd> __pfds;
 		std::map<int, Client *> __clients;
-		// std::map<std::string, Channel *> __channels;
-
 };
