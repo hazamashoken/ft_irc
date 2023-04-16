@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/27 09:33:08 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/16 16:49:59 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/16 18:57:56 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@
 
 Message::Message()
 {
+    _messageType = IRC_INVALID;
     expressionInit();
     messageInit();
 }
@@ -394,46 +395,61 @@ std::string Message::getUserList() const
     return(_userListStr);
 }
 
+void Message::setMsg(std::string message)
+{
+    int type;
+
+    stringClear();
+    type = IRC_INVALID;
+    if (_passMsgExp.match(message))
+        type = IRC_PASS;
+    else if (_nickMsgExp.match(message))
+        type = IRC_NICK;
+    else if (_userMsgExp.match(message))
+        type = IRC_USER;
+    else if (_operMsgExp.match(message))
+        type = IRC_OPER;
+    else if (_modeMsgExp.match(message))
+        type = IRC_MODE;
+    else if (_serviceMsgExp.match(message))
+        type = IRC_SERVICE;
+    else if (_quitMsgExp.match(message))
+        type = IRC_QUIT;
+    else if (_squitMsgExp.match(message))
+        type = IRC_SQUIT;
+    else if (_joinMsgExp.match(message))
+        type = IRC_JOIN;
+    else if (_partMsgExp.match(message))
+        type = IRC_PART;
+    else if (_cmodeMsgExp.match(message))
+        type = IRC_CMODE;
+    else if (_topicMsgExp.match(message))
+    {
+        if (_topicStr.size() > 1 && _topicStr[0] == ':')
+            _topicStr.erase(0, 1);
+        type = IRC_TOPIC;
+    }
+    else if (_namesMsgExp.match(message))
+        type = IRC_NAMES;
+    else if (_listMsgExp.match(message))
+        type = IRC_LIST;
+    else if (_inviteMsgExp.match(message))
+        type = IRC_INVITE;
+    else if (_kickMsgExp.match(message))
+        type = IRC_KICK;
+
+    _messageType = type;
+}
+
 int Message::getMsgType(std::string message)
 {
-    stringClear();
-    if (_passMsgExp.match(message))
-        return (IRC_PASS);
-    if (_nickMsgExp.match(message))
-        return (IRC_NICK);
-    if (_userMsgExp.match(message))
-        return (IRC_USER);
-    if (_operMsgExp.match(message))
-        return (IRC_OPER);
-    if (_modeMsgExp.match(message))
-        return (IRC_MODE);
-    if (_serviceMsgExp.match(message))
-        return (IRC_SERVICE);
-    if (_quitMsgExp.match(message))
-        return (IRC_QUIT);
-    if (_squitMsgExp.match(message))
-        return (IRC_SQUIT);
-    if (_joinMsgExp.match(message))
-        return (IRC_JOIN);
-    if (_partMsgExp.match(message))
-        return (IRC_PART);
-    if (_cmodeMsgExp.match(message))
-        return (IRC_CMODE);
-    if (_topicMsgExp.match(message))
-    {
-        if (!_topicStr.empty() && _topicStr[0] == ':')
-            _topicStr.erase(0, 1);
-        return (IRC_TOPIC);
-    }
-    if (_namesMsgExp.match(message))
-        return (IRC_NAMES);
-    if (_listMsgExp.match(message))
-        return (IRC_LIST);
-    if (_inviteMsgExp.match(message))
-        return (IRC_INVITE);
-    if (_kickMsgExp.match(message))
-        return (IRC_KICK);
-    return (IRC_INVALID);
+    setMsg(message);
+    return (_messageType);
+}
+
+int Message::getMsgType()
+{
+    return (_messageType);
 }
 
 std::string Message::getMsgStr() const

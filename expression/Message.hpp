@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/27 09:24:28 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/16 16:46:27 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/16 18:45:15 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,6 +61,8 @@ class Message
         std::string getTopic() const;
         std::string getUserList() const;
         int getMsgType(std::string message);
+        int getMsgType();
+        void setMsg(std::string message);
         std::string getMsgStr() const;
 
     private:
@@ -133,6 +135,7 @@ class Message
         std::string _userListStr;
 
         std::string _messageStr;
+        int _messageType;
 
         Expression _passMsgExp;
         Expression _nickMsgExp;
