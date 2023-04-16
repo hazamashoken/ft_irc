@@ -43,12 +43,12 @@ void Channel::sendMessage(Client* sender, const std::string& message) {
 	}
 }
 
-const std::map<const std::string, Client*>& Channel::getClients() const {
+const std::map<std::string, Client*>& Channel::getClients() const {
 	// Implementation
 	return __clients;
 }
 
-std::map<const std::string, Client*>::iterator Channel::getClientsBegin() {
+std::map<std::string, Client*>::iterator Channel::getClientsBegin() {
 	// Implementation
 	return __clients.begin();
 }

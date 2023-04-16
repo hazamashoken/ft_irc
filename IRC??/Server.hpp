@@ -17,8 +17,10 @@
 # include "utils.hpp"
 # include "ANSI.hpp"
 
+class Command;
 class Client;
 class Channel;
+class Message;
 class Server
 {
 	public:
@@ -26,13 +28,14 @@ class Server
 		~Server();
 
 		void initializeServer();
+		void initializeCommandPallet();
 		bool acceptNewClient();
 		void processClients();
 		void disconnectClient(Client *client);
 		void handleClient(Client *client);
 		Client* getClientByNickname(const std::string& nickname);
 		Channel* getChannelByName(const std::string& channelName);
-		void executeCommand(Client* client, const std::string& command, const std::vector<std::string>& args);
+		void executeCommand(Client *client, std::string &message);
 
 		static std::map<std::string, Channel *> __channels;
 
@@ -44,6 +47,7 @@ class Server
 		int __addrlen;
 		std::vector<pollfd> __pfds;
 		std::map<int, Client *> __clients;
+		std::map<std::string, void (*)(Command *)> __commands;
 
 		void debugSendToAllClients(const std::string& message);
 };

@@ -1,9 +1,10 @@
 # include "Client.hpp"
 # include "Server.hpp"
 # include "Channel.hpp"
+# include "Status.hpp"
 
 Client::Client(const int fd, struct sockaddr_in addr)
-: __socket(fd), __address(addr)
+: __socket(fd), __address(addr), __status(Status::PASSWORD), __registered(false)
 {}
 
 Client::~Client() {}
@@ -15,7 +16,7 @@ void Client::sendMessage(Client *target, const std::string& message) {
 
 void Client::sendMessage(Channel *channel, const std::string& message) {
 	// Implementation
-	std::map<const std::string, Client *>::iterator it = channel->getClientsBegin();
+	std::map<std::string, Client *>::iterator it = channel->getClientsBegin();
 	while (it != channel->getClients().end()) {
 		send(it->second->__socket, message.c_str(), message.length(), 0);
 		it++;
@@ -108,10 +109,9 @@ const std::string& Client::getReadBuffer() const {
 	return __readBuffer;
 }
 
-
 bool Client::isAliveClient() {
-	char buffer[1024];
-	int bytes = recv(__socket, buffer, 1024, 0);
+	char buffer[512];
+	int bytes = recv(__socket, buffer, 512, 0);
 	if (bytes == 0) {
 		return false;
 	}
@@ -123,14 +123,38 @@ int Client::getFd() const {
 	return __socket;
 }
 
-void Client::sendReply(const std::string& reply) {
-	send(__socket, reply.c_str(), reply.length(), 0);
+void Client::sendReply(short code, const std::string& reply) {
+	if (DEBUG)
+	{
+		std::stringstream o;
+		o << "fd: " << __socket << " > " << reply;
+		debug("REPLY", o.str());
+	}
+	send(__socket, (itostring(code) + " " + reply).c_str(), reply.length(), 0);
 }
 
-void Client::sendReply(const std::string& reply, const std::string& message) {
-	send(__socket, (reply + " " + message + "\r\n").c_str(), reply.length() + message.length() + 1, 0);
+void Client::sendReply(short code, const std::string& reply, const std::string& message) {
+	if (DEBUG)
+	{
+		std::stringstream o;
+		o << "fd: " << __socket << " > " << reply + " " + message + "\r\n";
+		debug("REPLY", o.str());
+	}
+	send(__socket, (itostring(code) + " " + reply + " " + message + "\r\n").c_str(), reply.length() + message.length() + 1, 0);
 }
 
 void Client::setReadBuffer(const std::string& newReadBuffer) {
 	__readBuffer = newReadBuffer;
+}
+
+void Client::setRegistered(bool registered) {
+	__registered = registered;
+}
+
+const std::string  Client::getPrefix() const {
+	return ":"	+ __nickname + "!" + __username + "@" + __hostname;
+}
+
+void Client::setStatus(int status) {
+	__status = status;
 }

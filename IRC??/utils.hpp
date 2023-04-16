@@ -28,3 +28,4 @@ std::string			s_debug(const std::string &src, const std::string &str);
 void				time(const int time);
 std::string			s_time(const int time);
 const std::string	irc_tolower(const std::string& str);
+const std::string	itostring(int i);

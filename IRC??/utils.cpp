@@ -104,3 +104,11 @@ std::vector<std::string>	ft_split(const std::string &str, const std::string &sep
 
 	return (ret);
 }
+
+const std::string	itostring(int i)
+{
+	std::stringstream	o;
+
+	o << i;
+	return (o.str());
+}
