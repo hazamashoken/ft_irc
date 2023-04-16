@@ -1,4 +1,4 @@
-SRCS	= main.cpp Expression.cpp Message.cpp
+SRCS	= main.cpp Expression.cpp Message.cpp Split.cpp
 
 OBJS	= ${SRCS:.cpp=.o}
 

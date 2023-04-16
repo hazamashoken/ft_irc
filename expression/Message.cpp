@@ -6,7 +6,7 @@
 /*   By: abossel <abossel@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/27 09:33:08 by abossel           #+#    #+#             */
-/*   Updated: 2023/04/15 19:00:26 by abossel          ###   ########.fr       */
+/*   Updated: 2023/04/16 16:49:59 by abossel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,11 +14,12 @@
 #include <iostream>
 
 #define IRC_SPECIAL std::string("-[]\\`^{}")
+#define IRC_TARGET std::string("-.!@*?\\")
 #define IRC_NONUSER std::string("\0\r\n @", 5)
 #define IRC_NONPASS std::string("\0\r\n \t", 5)
 #define IRC_NONPARAM std::string("\0\r\n :", 5)
 #define IRC_NONREAL std::string("\0\r\n:", 4)
-#define IRC_NONCHANNEL std::string("\0\a\r\n ,:")
+#define IRC_NONCHANNEL std::string("\0\a\r\n ,:", 7)
 
 Message::Message()
 {
@@ -84,18 +85,6 @@ void Message::expressionInitHostaddr()
     _hostaddrExp.exp(ip4addr).jmp().exp(ip6addr);
 }
 
-void Message::expressionInitChannel()
-{
-    Expression channelID;
-    channelID.all("!").upper(5, 5).add("0123456789");
-
-    Expression channel;
-    channel.exp(channelID).jmp();
-    channel.any("#+&").con();
-    channel.inv(IRC_NONCHANNEL, 1);
-    channel.exp(Expression().any(":").inv(IRC_NONCHANNEL, 1), 0, 1);
-}
-
 void Message::expressionInit()
 {
     // nickname expression
@@ -150,12 +139,48 @@ void Message::expressionInit()
     _modeExp.any("+-").any("iwoOrs");
 
     // wildname expression
-    _wildnameExp = Expression(_wildnameStr);
-    _wildnameExp.alnum(1).add(".*?\\");
+    _targetExp = Expression(_targetStr);
+    _targetExp.alnum(1).add(IRC_TARGET);
 
     // info expression
     _infoExp = Expression(_infoStr);
     _infoExp.inv(IRC_NONREAL, 1);
+
+    // channel expression
+    _channelExp = Expression(_channelStr);
+    _channelExp.exp(Expression().all("!").upper(5, 5).add("0123456789")).jmp();
+    _channelExp.any("#+&").con();
+    _channelExp.inv(IRC_NONCHANNEL, 1);
+    _channelExp.exp(Expression().all(":").inv(IRC_NONCHANNEL, 1), 0, 1);
+
+    // channel list expression
+    _channelListExp = Expression(_channelListStr);
+    _channelListExp.all("0").jmp();
+    _channelListExp.exp(_channelExp).exp(Expression().all(",").exp(_channelExp), 0);
+
+    // key list expression
+    _keyListExp = Expression(_keyListStr);
+    _keyListExp.exp(_passwordExp, 1).exp(Expression().all(",").exp(_passwordExp), 0);
+
+    // channel mode expression
+    _channelModeExp = Expression(_channelModeStr);
+    _channelModeExp.any("eIO").jmp();
+    _channelModeExp.any("+-").any("OvaimnqpsrtklbeI", 1);
+    _channelModeExp.exp(Expression().all(" ").exp(_targetExp), 0);
+
+    // channel mode list expression
+    _channelModeListExp = Expression(_channelModeListStr);
+    _channelModeListExp.exp(_channelModeExp);
+    _channelModeListExp.exp(Expression().all(" ").exp(_channelModeExp), 0);
+
+    // topic info expression
+    _topicExp = Expression(_topicStr);
+    _topicExp.all(":").exp(_infoExp, 0, 1);
+
+    // user list expression
+    _userListExp = Expression(_userListStr);
+    _userListExp.exp(_userExp);
+    _userListExp.exp(Expression().all(",").exp(_userExp), 0);
 }
 
 void Message::messageInit()
@@ -170,9 +195,9 @@ void Message::messageInit()
 
     // USER message
     _userMsgExp = Expression(_messageStr);
-    _userMsgExp.all("USER ").exp(_userExp);
-    _userMsgExp.all(" ").exp(_bitmodeExp);
-    _userMsgExp.all(" ").exp(_unusedExp);
+    _userMsgExp.all("USER ").exp(_userExp).all(" ");
+    _userMsgExp.exp(Expression().exp(_bitmodeExp).all(" ").exp(_unusedExp)).jmp();
+    _userMsgExp.exp(Expression().exp(_hostnameExp).all(" ").exp(_servernameExp)).con();
     _userMsgExp.all(" :").exp(_realnameExp).all("\r\n");
 
     // OPER message
@@ -188,7 +213,7 @@ void Message::messageInit()
     _serviceMsgExp = Expression(_messageStr);
     _serviceMsgExp.all("SERVICE ").exp(_nicknameExp);
     _serviceMsgExp.all(" ").exp(_unusedExp);
-    _serviceMsgExp.all(" ").exp(_wildnameExp);
+    _serviceMsgExp.all(" ").exp(_targetExp);
     _serviceMsgExp.all(" ").exp(_unusedExp);
     _serviceMsgExp.all(" ").exp(_unusedExp);
     _serviceMsgExp.all(" :").exp(_infoExp).all("\r\n");
@@ -201,6 +226,72 @@ void Message::messageInit()
     _squitMsgExp = Expression(_messageStr);
     _squitMsgExp.all("SQUIT ").exp(_servernameExp);
     _squitMsgExp.all(" :").exp(_infoExp).all("\r\n");
+
+    // channel JOIN message
+    _joinMsgExp = Expression(_messageStr);
+    _joinMsgExp.all("JOIN ").exp(_channelListExp);
+    _joinMsgExp.exp(Expression().all(" ").exp(_keyListExp), 0, 1).all("\r\n");
+
+    // channel PART message
+    _partMsgExp = Expression(_messageStr);
+    _partMsgExp.all("PART ").exp(_channelListExp);
+    _partMsgExp.exp(Expression().all(" :").exp(_infoExp), 0, 1).all("\r\n");
+
+    // channel MODE message
+    _cmodeMsgExp = Expression(_messageStr);
+    _cmodeMsgExp.all("MODE ").exp(_channelExp);
+    _cmodeMsgExp.all(" ").exp(_channelModeListExp).all("\r\n");
+
+    // channel TOPIC message
+    _topicMsgExp = Expression(_messageStr);
+    _topicMsgExp.all("TOPIC").exp(Expression().all(" ").exp(_topicExp), 0, 1).all("\r\n");
+
+    // channel NAMES message
+    _namesMsgExp = Expression(_messageStr);
+    _namesMsgExp.all("NAMES").exp(Expression().all(" ").exp(_channelListExp).
+        exp(Expression().all(" ").exp(_targetExp), 0, 1), 0, 1).all("\r\n");
+
+    // channel LIST message
+    _listMsgExp = Expression(_messageStr);
+    _listMsgExp.all("LIST").exp(Expression().all(" ").exp(_channelListExp).
+        exp(Expression().all(" ").exp(_targetExp), 0, 1), 0, 1).all("\r\n");
+    
+    // channel INVITE message
+    _inviteMsgExp = Expression(_messageStr);
+    _inviteMsgExp.all("INVITE ").exp(_nicknameExp);
+    _inviteMsgExp.all(" ").exp(_channelExp).all("\r\n");
+
+    // channel KICK message
+    _kickMsgExp = Expression(_messageStr);
+    _kickMsgExp.all("KICK ").exp(_channelListExp);
+    _kickMsgExp.all(" ").exp(_userListExp);
+    _kickMsgExp.exp(Expression().all(" :").exp(_infoExp), 0, 1).all("\r\n");
+}
+
+void Message::stringClear()
+{
+    _messageStr.clear();
+    _nicknameStr.clear();
+    _userStr.clear();
+    _hostnameStr.clear();
+    _hostaddrStr.clear();
+    _hostStr.clear();
+    _servernameStr.clear();
+    _prefixStr.clear();
+    _passwordStr.clear();
+    _bitmodeStr.clear();
+    _unusedStr.clear();
+    _realnameStr.clear();
+    _modeStr.clear();
+    _targetStr.clear();
+    _infoStr.clear();
+    _channelStr.clear();
+    _channelListStr.clear();
+    _keyListStr.clear();
+    _channelModeStr.clear();
+    _channelModeListStr.clear();
+    _topicStr.clear();
+    _userListStr.clear();
 }
 
 std::string Message::getNickname() const
@@ -263,9 +354,9 @@ std::string Message::getMode() const
     return(_modeStr);
 }
 
-std::string Message::getWildname() const
+std::string Message::getTarget() const
 {
-    return(_wildnameStr);
+    return(_targetStr);
 }
 
 std::string Message::getInfo() const
@@ -273,8 +364,39 @@ std::string Message::getInfo() const
     return(_infoStr);
 }
 
+std::string Message::getChannel() const
+{
+    return(_channelStr);
+}
+
+std::string Message::getChannelList() const
+{
+    return(_channelListStr);
+}
+
+std::string Message::getKeyList() const
+{
+    return(_keyListStr);
+}
+
+std::string Message::getChannelModeList() const
+{
+    return(_channelModeListStr);
+}
+
+std::string Message::getTopic() const
+{
+    return(_topicStr);
+}
+
+std::string Message::getUserList() const
+{
+    return(_userListStr);
+}
+
 int Message::getMsgType(std::string message)
 {
+    stringClear();
     if (_passMsgExp.match(message))
         return (IRC_PASS);
     if (_nickMsgExp.match(message))
@@ -291,6 +413,26 @@ int Message::getMsgType(std::string message)
         return (IRC_QUIT);
     if (_squitMsgExp.match(message))
         return (IRC_SQUIT);
+    if (_joinMsgExp.match(message))
+        return (IRC_JOIN);
+    if (_partMsgExp.match(message))
+        return (IRC_PART);
+    if (_cmodeMsgExp.match(message))
+        return (IRC_CMODE);
+    if (_topicMsgExp.match(message))
+    {
+        if (!_topicStr.empty() && _topicStr[0] == ':')
+            _topicStr.erase(0, 1);
+        return (IRC_TOPIC);
+    }
+    if (_namesMsgExp.match(message))
+        return (IRC_NAMES);
+    if (_listMsgExp.match(message))
+        return (IRC_LIST);
+    if (_inviteMsgExp.match(message))
+        return (IRC_INVITE);
+    if (_kickMsgExp.match(message))
+        return (IRC_KICK);
     return (IRC_INVALID);
 }
 
