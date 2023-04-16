@@ -127,20 +127,20 @@ void Client::sendReply(short code, const std::string& reply) {
 	if (DEBUG)
 	{
 		std::stringstream o;
-		o << "fd: " << __socket << " > " << reply;
-		debug("REPLY", o.str());
+		o << "fd: " << __socket << " > " << getPrefix() + " " + itostring(code) + " " + reply;
+		Debug::debug("REPLY", o.str());
 	}
-	send(__socket, (itostring(code) + " " + reply).c_str(), reply.length(), 0);
+	send(__socket, (getPrefix() + " " + itostring(code) + " " + reply + "\r\n").c_str(), reply.length(), 0);
 }
 
 void Client::sendReply(short code, const std::string& reply, const std::string& message) {
 	if (DEBUG)
 	{
 		std::stringstream o;
-		o << "fd: " << __socket << " > " << reply + " " + message + "\r\n";
-		debug("REPLY", o.str());
+		o << "fd: " << __socket << " > " << getPrefix() + " " + itostring(code) + " " + reply + " " + message + "\r\n";
+		Debug::debug("REPLY", o.str());
 	}
-	send(__socket, (itostring(code) + " " + reply + " " + message + "\r\n").c_str(), reply.length() + message.length() + 1, 0);
+	send(__socket, (getPrefix() + " " + itostring(code) + " " + reply + " " + message + "\r\n").c_str(), reply.length() + message.length() + 1, 0);
 }
 
 void Client::setReadBuffer(const std::string& newReadBuffer) {
@@ -157,4 +157,16 @@ const std::string  Client::getPrefix() const {
 
 void Client::setStatus(int status) {
 	__status = status;
+}
+
+const std::string& Client::getSendBuffer() const {
+	return __sendBuffer;
+}
+
+void Client::appendSendBuffer(const std::string& message) {
+	__sendBuffer.append(message);
+}
+
+void Client::clearSendBuffer() {
+	__sendBuffer.clear();
 }

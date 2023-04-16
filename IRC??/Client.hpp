@@ -45,6 +45,10 @@ public:
 	bool isAliveClient();
 	void setRegistered(bool registered);
 	const std::string getPrefix() const;
+	
+	const std::string& getSendBuffer() const;
+	void appendSendBuffer(const std::string& message);
+	void clearSendBuffer();
 
 private:
 	int __socket;
@@ -58,6 +62,8 @@ private:
 	std::map<std::string, Channel*> __currentChannels;
 	std::string __readBuffer;
 	bool __registered;
+
+	std::string __sendBuffer;
 };
 
 

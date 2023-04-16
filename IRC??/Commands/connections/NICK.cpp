@@ -2,34 +2,21 @@
 # include "../../Client.hpp"
 # include "../../Server.hpp"
 # include "../RPL.hpp"
+# include "../../parsers/Message.hpp"
 
+# define IRC_NONUSER std::string("\0\r\n @", 5)
+# define IRC_SPECIAL std::string("-[]\\`^{}")
 namespace Commands {
+
 	void	NICK(Command *command)
 	{
-		Client*	client = command->getClient();
-		Server*	server = command->getServer();
-		std::string	nickname = command->get_trailing();
-		if (nickname.empty())
-		{
-			client->sendReply(IRC::ERR_NONICKNAMEGIVEN, "No nickname given");
-			return ;
-		}
-		if (nickname.find_first_of(" \t\r\n") != std::string::npos)
-		{
-			client->sendReply(IRC::ERR_ERRONEUSNICKNAME, "Erroneus nickname");
-			return ;
-		}
-		if (nickname.length() > 9)
-		{
-			client->sendReply(IRC::ERR_ERRONEUSNICKNAME, "Erroneus nickname");
-			return ;
-		}
-		if (server->getClientByNickname(nickname))
-		{
-			client->sendReply(IRC::ERR_NICKNAMEINUSE, "Nickname is already in use");
-			return ;
-		}
-		client->setNickname(nickname);
-		// client->sendReply(IRC::RPL_NICKNAME, "Nickname changed to " + nickname);
+		// TODO: check if nickname is valid
+		const std::string &nickname = command->getMessage()->getNickname();
+
+		std::string message = "NICK :" + nickname;
+		Debug::debug("REPLY: ", message);
+		send(command->getClient()->getFd(), message.c_str(), message.size(), 0);
+		command->getClient()->setNickname(nickname);
+		Debug::debug("Nickname changed to " + nickname);
 	}
 }

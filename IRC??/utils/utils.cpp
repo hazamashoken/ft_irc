@@ -1,6 +1,7 @@
 # include "utils.hpp"
 # include "ANSI.hpp"
 # include <string>
+# include "../Parsers/Message.hpp"
 
 int	error(const std::string &str, const int ret)
 {
@@ -85,24 +86,19 @@ std::string	s_time(const int time)
 	return (o.str());
 }
 
-std::vector<std::string>	ft_split(const std::string &str, const std::string &sep)
+std::vector<std::string>	ft_split(std::string str, std::string delimiter)
 {
-	std::string					cpy = str;
-	std::vector<std::string>	ret;
-	size_t						pos;
+	std::vector<std::string> values = std::vector<std::string>();
 
-	pos = cpy.find(sep);
-	while (pos != std::string::npos)
+	size_t position;
+	while ((position = str.find(delimiter)) != std::string::npos)
 	{
-		ret.push_back(cpy.substr(0, pos));
-		cpy.erase(0, pos + sep.length());
-		pos = cpy.find(sep);
+		values.push_back(str.substr(0, position));
+		str.erase(0, position + delimiter.length());
 	}
+	values.push_back(str);
 
-	if (ret.empty() == true && cpy.empty() == false)
-		ret.push_back(str);	// might not be needed
-
-	return (ret);
+	return values;
 }
 
 const std::string	itostring(int i)
@@ -111,4 +107,40 @@ const std::string	itostring(int i)
 
 	o << i;
 	return (o.str());
+}
+
+namespace Debug {
+	MsgType::MsgType(){
+		add("BLANK");
+		add("IRC_INVALID");
+		add("IRC_PASS");
+		add("IRC_NICK");
+		add("IRC_USER");
+		add("IRC_OPER");
+		add("IRC_MODE");
+		add("IRC_SERVICE");
+		add("IRC_QUIT");
+		add("IRC_SQUIT");
+
+		add("IRC_JOIN");
+		add("IRC_PART");
+		add("IRC_CMODE");
+		add("IRC_TOPIC");
+		add("IRC_NAMES");
+		add("IRC_LIST");
+		add("IRC_INVITE");
+		add("IRC_KICK");
+	}
+
+	MsgType::~MsgType() {}
+
+	void MsgType::add(const std::string& str)
+	{
+		__msgVec.push_back(str);
+	}
+
+	std::string& MsgType::toStr(int type)
+	{
+		return __msgVec.at(type);
+	}
 }

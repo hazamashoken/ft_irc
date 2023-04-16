@@ -4,6 +4,7 @@
 # include "Commands/Command.hpp"
 # include "Status.hpp"
 # include "Commands/RPL.hpp"
+# include "Parsers/Message.hpp"
 
 std::map<std::string, Channel *> Server::__channels;
 
@@ -12,7 +13,10 @@ Server::Server(const char *port, const char *pass)
 	 __addrlen(sizeof(__server_addr)), __hostname("localhost"),
 	  __version("0.0.1"), __creationDate(std::time(NULL))
 {
+	/// @brief setup the commmand pallet
 	initializeCommandPallet();
+
+	/// @brief setup the server
 	initializeServer();
 }
 
@@ -37,96 +41,129 @@ Server::~Server()
 	close(__server_fd);
 }
 
+/// @brief initialize the server
 void Server::initializeServer()
 {
+	/// @brief create the server socket
 	if ((__server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
 		exit(error("socket() failed", 1));
 
+	/// @brief set the socket options
 	int enable = 1;
 
+	/// @brief set the socket to reuse the address
 	if (setsockopt(__server_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) < 0)
 		exit(error("setsockopt(SO_REUSEADDR) failed", 1));
+
+	/// @brief set the socket to non blocking
 	if (fcntl(__server_fd, F_SETFL, O_NONBLOCK) < 0)
 		exit(error("fcntl() failed", 1));
 
+	/// @brief set the server address for IPv4 to accept any address at the given port
 	__server_addr.sin_family = AF_INET;
 	__server_addr.sin_addr.s_addr = INADDR_ANY;
-	std::cout << "port: " << __port << std::endl;
+	Debug::debug(std::string("port: ") + __port);
 	__server_addr.sin_port = htons(atoi(__port.c_str()));
 
-	std::cout << "port: " << __server_addr.sin_port << std::endl;
+	/// @brief bind the socket to the address
 	if (bind(__server_fd, (struct sockaddr *)&__server_addr, __addrlen) < 0)
 		exit(error("bind() failed", 1));
+
+	/// @brief listen for new connections
 	if (listen(__server_fd, __server_addr.sin_port) < 0)
 		exit(error("listen() failed", 1));
 
-	__pfds.push_back((pollfd){__server_fd, POLLIN, 0});
+	/// @brief add the server fd to the pollfd vector
+	__pfds.push_back((pollfd){__server_fd, POLLIN | POLLHUP, 0});
 
 }
 
+/// @brief accept a new client
+/// @return 0 on success, 1 on failure
 bool Server::acceptNewClient()
 {
+	/// @brief set the new client address and size
 	int new_client_fd = 0;
 	sockaddr_in new_client_addr;
 	socklen_t new_client_addr_size = sizeof(new_client_addr);
 
+	/// @brief accept the new client fd
 	new_client_fd = accept(__server_fd, (struct sockaddr *)&new_client_addr, &new_client_addr_size);
 	if (new_client_fd == -1)
 		return(error("accept() failed", 1));
+
+	/// @brief add the new client to the clients map
 	__clients.insert(std::pair<int, Client *>(new_client_fd, new Client(new_client_fd, new_client_addr)));
+
 	if (DEBUG)
 	{
 		std::stringstream ss;
 		ss <<  new_client_fd;
 		std::string str = ss.str();
-		debug(std::string("new client: ") + str);
+		Debug::debug(std::string("new client: ") + str);
 	}
+
+	/// @brief add the new client fd to the pollfd vector
 	__pfds.push_back((pollfd){new_client_fd, POLLIN | POLLHUP, 0});
 	return (0);
 }
 
 void Server::processClients()
 {
+	/// @brief set poll for the fds
 	int ret = poll(&__pfds[0], __pfds.size(), -1);
 	if (ret < 0) {
 		perror("poll failed");
 		exit(EXIT_FAILURE);
 	}
+
+	/// @brief iterate through the pollfd vector
 	for (size_t i = 0; i < __pfds.size(); ++i) {
-		// if (DEBUG)
-		// {
-		// 	std::ostringstream o;
-		// 	o << "__pfds: " << __pfds[i].fd << " " << __pfds[i].revents;
-		// 	debug(o);
-		// }
+
+		/// @brief check for read events on each fd
 		if (__pfds[i].revents & POLLIN) {
+
+			/// @brief check if the event is on the server fd
 			if (__pfds[i].fd == __server_fd) {
+
+				/// @brief accept the new client
 				if (acceptNewClient())
 					error("acceptNewClient() failed");
+
+			/// @brief else it is a client fd
 			} else {
-				debug("client detected");
+
+				Debug::debug("client detected");
+				/// check if the client is still alive aka recv() returns not 0
 				if (__clients[__pfds[i].fd]->isAliveClient() == false)
 				{
-					// TODO: move all execution to executeCommand
+					/// @brief remove the client from the clients map
+					/// @todo move all execution to executeCommand
 					__clients[__pfds[i].fd]->setStatus(Status::DELETE);
-					debug("client closed");
+					Debug::debug("client closed");
 					disconnectClient(__clients[__pfds[i].fd]);
 					close(__pfds[i].fd);
 					__pfds.erase(__pfds.begin() + i);
 					continue ;
 				}
-				debug("client handled");
+				Debug::debug("client handled");
+
+				/// @brief handle the client
 				handleClient(__clients[__pfds[i].fd]);
 			}
 		} else if (__pfds[i].revents & POLLHUP) {
-			// TODO: move all execution to executeCommand
-			debug("client closed");
+			/// @brief remove the client from the clients map
+			/// @todo move all execution to executeCommand
+			Debug::debug("client closed");
 			disconnectClient(__clients[__pfds[i].fd]);
 			close(__pfds[i].fd);
 			__pfds.erase(__pfds.begin() + i);
 			break ;
 		}
 	}
+
+	/// @todo move the send() from inside the client to here
+	/// @remarks this will allow to send() to all clients at once instead of one by one which cause blocking
 }
 
 void Server::handleClient(Client *client)
@@ -135,13 +172,14 @@ void Server::handleClient(Client *client)
 	std::vector<std::string> args;
 	std::string line;
 
+	/// @brief check if client buffer is empty
 	if (client->getReadBuffer().empty())
 	{
-		debug("empty read buffer");
+		Debug::debug("empty read buffer");
 		return ;
 	}
 	line = client->getReadBuffer();
-	debug("line: " + line);
+	Debug::debug("line: " + line);
 	// if (line.find("\r\n") == std::string::npos)
 		// return ;
 	// client->setReadBuffer(line.substr(line.find("\r\n") + 2, line.size()));
@@ -152,7 +190,7 @@ void Server::handleClient(Client *client)
 		executeCommand(client, command);
 	}
 	client->setReadBuffer(line);
-	debug("line: " + line);
+	Debug::debug("line: " + line);
 
 	// debugSendToAllClients(line);
 
@@ -184,20 +222,36 @@ Channel* Server::getChannelByName(const std::string& channelName)
 
 void Server::executeCommand(Client* client, std::string& command)
 {
-	Command message(client, this, command);
-	debug("command: " + command);
+	Message *token = new Message;
+	Command *cmd = NULL;
+	Debug::debug("command: " + command);
+	if (__commands.count(token->getMsgType(command)))
+	{
+		cmd = new Command(client, this, token);
+		Debug::debug(Debug::msgType[token->getMsgType()]);
+		__commands[token->getMsgType()](cmd);
+	}
+	else
+	{
+		Debug::debug("command not found");
+		client->sendReply(IRC::ERR_UNKNOWNCOMMAND, client->getPrefix(), command);
+	}
 
 }
 
+/// @brief disconnect a client from all channels and remove it from the server
+/// @param client the client to disconnect
 void Server::disconnectClient(Client *client)
 {
-	client->sendReply(IRC::RPL_NONE, client->getPrefix(), client->getReadBuffer());
+	/// @brief remove the client from all channels
 	std::map<std::string, Channel *>::iterator it = __channels.begin();
 	while (it != __channels.end())
 	{
 		it->second->removeClient(client);
 		++it;
 	}
+
+	/// @brief remove the client from the server
 	__clients.erase(client->getFd());
 }
 
@@ -226,10 +280,12 @@ std::string Server::getCreationDate() const
 	return std::string(std::ctime(&__creationDate));
 }
 
+/// @brief initialize the command pallet
 void Server::initializeCommandPallet()
 {
-	__commands["NICK"] = Commands::NICK;
-	__commands["USER"] = Commands::USER;
+	/// @brief __commands[IRC::Message::Type] = &Server::command
+	__commands[IRC_NICK] = Commands::NICK;
+	__commands[IRC_USER] = Commands::USER;
 }
 
 

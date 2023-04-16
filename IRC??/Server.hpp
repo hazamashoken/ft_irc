@@ -51,7 +51,7 @@ class Server
 		int __addrlen;
 		std::vector<pollfd> __pfds;
 		std::map<int, Client *> __clients;
-		std::map<std::string, void (*)(Command *)> __commands;
+		std::map<int, void (*)(Command *)> __commands;
 		std::string __hostname;
 		std::string __version;
 		time_t __creationDate;

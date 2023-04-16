@@ -2,50 +2,16 @@
 # include "Command.hpp"
 # include "../Client.hpp"
 # include "../Server.hpp"
+# include "../parsers/Message.hpp"
 
-Command::Command(Client *client, Server *server, std::string command)
-: __client(client), __server(server), __command(command)
+Command::Command(Client *client, Server *server, Message* message)
+: __client(client), __server(server), __message(message)
 {
-	std::string delimiter(":");
-	size_t position;
-	if ((position = command.find(delimiter)) != std::string::npos)
-	{
-		std::string tmp = command.substr(0, position);
-		command.erase(0, position + delimiter.length());
-		__trailing = command;
-		command = tmp;
-	}
-
-	__params = ft_split(command, " ");
-	__prefix = *(__params.begin());
-	__params.erase(__params.begin());
-
-	for (size_t index = 0; index < __prefix.length(); ++index)
-		__prefix[index] = std::toupper(__prefix[index]);
 }
 
 Command::~Command()
 {
-}
-
-std::string	Command::get_command(void) const
-{
-	return __command;
-}
-
-std::string	Command::get_prefix(void) const
-{
-	return __prefix;
-}
-
-std::vector<std::string>	Command::get_params(void) const
-{
-	return __params;
-}
-
-std::string	Command::get_trailing(void) const
-{
-	return __trailing;
+	delete __message;
 }
 
 void Command::reply(short code, const std::string& message) const
@@ -66,5 +32,10 @@ Client	*Command::getClient(void) const
 Server	*Command::getServer(void) const
 {
 	return __server;
+}
+
+Message *Command::getMessage() const
+{
+	return __message;
 }
 
