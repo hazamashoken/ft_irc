@@ -33,6 +33,7 @@ class Command
 };
 
 namespace Commands{
-	void	Nick(Command *command);
+	void	NICK(Command *command);
+	void	USER(Command *command);
 
 }

@@ -8,8 +8,11 @@
 std::map<std::string, Channel *> Server::__channels;
 
 Server::Server(const char *port, const char *pass)
-: __port(std::string(port)), __pass(std::string(pass)), __addrlen(sizeof(__server_addr))
+: __port(std::string(port)), __pass(std::string(pass)),
+	 __addrlen(sizeof(__server_addr)), __hostname("localhost"),
+	  __version("0.0.1"), __creationDate(std::time(NULL))
 {
+	initializeCommandPallet();
 	initializeServer();
 }
 
@@ -208,7 +211,25 @@ void Server::debugSendToAllClients(const std::string& message)
 	}
 }
 
+std::string Server::getHostname() const
+{
+	return __hostname;
+}
+
+std::string Server::getVersion() const
+{
+	return __version;
+}
+
+std::string Server::getCreationDate() const
+{
+	return std::string(std::ctime(&__creationDate));
+}
+
 void Server::initializeCommandPallet()
 {
-	__commands["NICK"] = Commands::Nick;
+	__commands["NICK"] = Commands::NICK;
+	__commands["USER"] = Commands::USER;
 }
+
+

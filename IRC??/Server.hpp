@@ -13,6 +13,7 @@
 # include <unistd.h>
 # include <fcntl.h>
 # include <poll.h>
+# include <ctime>
 
 # include "utils/utils.hpp"
 # include "utils/ANSI.hpp"
@@ -35,6 +36,9 @@ class Server
 		void handleClient(Client *client);
 		Client* getClientByNickname(const std::string& nickname);
 		Channel* getChannelByName(const std::string& channelName);
+		std::string getHostname() const;
+		std::string getVersion() const;
+		std::string getCreationDate() const;
 		void executeCommand(Client *client, std::string &message);
 
 		static std::map<std::string, Channel *> __channels;
@@ -48,6 +52,10 @@ class Server
 		std::vector<pollfd> __pfds;
 		std::map<int, Client *> __clients;
 		std::map<std::string, void (*)(Command *)> __commands;
+		std::string __hostname;
+		std::string __version;
+		time_t __creationDate;
+
 
 		void debugSendToAllClients(const std::string& message);
 };

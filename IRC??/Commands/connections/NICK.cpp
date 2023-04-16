@@ -1,10 +1,10 @@
-# include "Command.hpp"
-# include "../Client.hpp"
-# include "../Server.hpp"
-# include "RPL.hpp"
+# include "../Command.hpp"
+# include "../../Client.hpp"
+# include "../../Server.hpp"
+# include "../RPL.hpp"
 
 namespace Commands {
-	void	Nick(Command *command)
+	void	NICK(Command *command)
 	{
 		Client*	client = command->getClient();
 		Server*	server = command->getServer();
