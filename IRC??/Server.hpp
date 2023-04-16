@@ -14,8 +14,8 @@
 # include <fcntl.h>
 # include <poll.h>
 
-# include "utils.hpp"
-# include "ANSI.hpp"
+# include "utils/utils.hpp"
+# include "utils/ANSI.hpp"
 
 class Command;
 class Client;

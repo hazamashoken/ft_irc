@@ -12,7 +12,7 @@
 # include <fcntl.h>
 # include <arpa/inet.h>
 
-# include "utils.hpp"
+# include "utils/utils.hpp"
 
 class Server;
 class Channel;
