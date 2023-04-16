@@ -1,7 +1,7 @@
 # include "utils.hpp"
 # include "ANSI.hpp"
 # include <string>
-# include "../Parsers/Message.hpp"
+# include "../parsers/Message.hpp"
 
 int	error(const std::string &str, const int ret)
 {
@@ -109,38 +109,38 @@ const std::string	itostring(int i)
 	return (o.str());
 }
 
-namespace Debug {
-	MsgType::MsgType(){
-		add("BLANK");
-		add("IRC_INVALID");
-		add("IRC_PASS");
-		add("IRC_NICK");
-		add("IRC_USER");
-		add("IRC_OPER");
-		add("IRC_MODE");
-		add("IRC_SERVICE");
-		add("IRC_QUIT");
-		add("IRC_SQUIT");
+// namespace Debug {
+// 	MsgType::MsgType(){
+// 		add("BLANK");
+// 		add("IRC_INVALID");
+// 		add("IRC_PASS");
+// 		add("IRC_NICK");
+// 		add("IRC_USER");
+// 		add("IRC_OPER");
+// 		add("IRC_MODE");
+// 		add("IRC_SERVICE");
+// 		add("IRC_QUIT");
+// 		add("IRC_SQUIT");
 
-		add("IRC_JOIN");
-		add("IRC_PART");
-		add("IRC_CMODE");
-		add("IRC_TOPIC");
-		add("IRC_NAMES");
-		add("IRC_LIST");
-		add("IRC_INVITE");
-		add("IRC_KICK");
-	}
+// 		add("IRC_JOIN");
+// 		add("IRC_PART");
+// 		add("IRC_CMODE");
+// 		add("IRC_TOPIC");
+// 		add("IRC_NAMES");
+// 		add("IRC_LIST");
+// 		add("IRC_INVITE");
+// 		add("IRC_KICK");
+// 	}
 
-	MsgType::~MsgType() {}
+// 	MsgType::~MsgType() {}
 
-	void MsgType::add(const std::string& str)
-	{
-		__msgVec.push_back(str);
-	}
+// 	void MsgType::add(const std::string& str)
+// 	{
+// 		__msgVec.push_back(str);
+// 	}
 
-	std::string& MsgType::toStr(int type)
-	{
-		return __msgVec.at(type);
-	}
-}
+// 	std::string& MsgType::toStr(int type)
+// 	{
+// 		return __msgVec.at(type);
+// 	}
+// }

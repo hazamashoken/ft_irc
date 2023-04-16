@@ -30,5 +30,6 @@ class Command
 namespace Commands{
 	void	NICK(Command *command);
 	void	USER(Command *command);
+	void	PASS(Command *command);
 
 }

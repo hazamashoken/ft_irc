@@ -16,7 +16,7 @@ namespace Debug {
 			return ;
 
 		std::cout << ANSI::red << ANSI::bold << "[ DEBUG ]:\t"
-			<< ANSI::reset << ANSI::src << ANSI::bold << '[' << ANSI::src << "]:"
+			<< ANSI::reset << ANSI::src << ANSI::bold << '[' << src << "]:"
 			<< std::string(((long)(INDENT_SRC - src.length()) >= 0 ?
 						INDENT_SRC - src.length() : 0), ' ')
 			<< ANSI::reset << ANSI::red << "\t" << str

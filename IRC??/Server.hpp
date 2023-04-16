@@ -36,6 +36,7 @@ class Server
 		void handleClient(Client *client);
 		Client* getClientByNickname(const std::string& nickname);
 		Channel* getChannelByName(const std::string& channelName);
+		const std::string& getPass() const;
 		std::string getHostname() const;
 		std::string getVersion() const;
 		std::string getCreationDate() const;

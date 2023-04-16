@@ -4,7 +4,7 @@
 # include "Commands/Command.hpp"
 # include "Status.hpp"
 # include "Commands/RPL.hpp"
-# include "Parsers/Message.hpp"
+# include "parsers/Message.hpp"
 
 std::map<std::string, Channel *> Server::__channels;
 
@@ -225,16 +225,31 @@ void Server::executeCommand(Client* client, std::string& command)
 	Message *token = new Message;
 	Command *cmd = NULL;
 	Debug::debug("command: " + command);
-	if (__commands.count(token->getMsgType(command)))
+	token->getMsgType(command);
+	if (client->getStatus() == Status::DELETE)
+		return ;
+	if (client->getStatus() == Status::PASSWORD)
+	{
+		/// @brief check if the client is trying to send a password
+		Debug::debug("password");
+		if (token->getMsgType() != IRC_PASS)
+			return ;
+	} else if (client->getStatus() == Status::REGISTER) {
+		/// @brief check if the client is trying to register
+		Debug::debug("register");
+		if (token->getMsgType() != IRC_NICK && token->getMsgType() != IRC_USER)
+			return ;
+	}
+	if (__commands.count(token->getMsgType()))
 	{
 		cmd = new Command(client, this, token);
-		Debug::debug(Debug::msgType[token->getMsgType()]);
+		// Debug::debug(Debug::msgType[token->getMsgType()]);
 		__commands[token->getMsgType()](cmd);
 	}
 	else
 	{
-		Debug::debug("command not found");
-		client->sendReply(IRC::ERR_UNKNOWNCOMMAND, client->getPrefix(), command);
+		Debug::debug("command not found: " + command);
+		// client->sendReply(IRC::ERR_UNKNOWNCOMMAND, client->getPrefix(), command);
 	}
 
 }
@@ -280,10 +295,16 @@ std::string Server::getCreationDate() const
 	return std::string(std::ctime(&__creationDate));
 }
 
+const std::string& Server::getPass() const
+{
+	return __pass;
+}
+
 /// @brief initialize the command pallet
 void Server::initializeCommandPallet()
 {
 	/// @brief __commands[IRC::Message::Type] = &Server::command
+	__commands[IRC_PASS] = Commands::PASS;
 	__commands[IRC_NICK] = Commands::NICK;
 	__commands[IRC_USER] = Commands::USER;
 }

@@ -29,18 +29,18 @@ const std::string	itostring(int i);
 
 namespace Debug {
 
-	std::vector<std::string> msgType;
-	class MsgType{
-		public:
-			MsgType();
-			~MsgType();
+	// std::vector<std::string> msgType;
+	// class MsgType{
+	// 	public:
+	// 		MsgType();
+	// 		~MsgType();
 
-			std::string& toStr(int type);
-			void add(const std::string& str);
+	// 		std::string& toStr(int type);
+	// 		void add(const std::string& str);
 
-		private:
-			std::vector<std::string> __msgVec;
-	};
+	// 	private:
+	// 		std::vector<std::string> __msgVec;
+	// };
 
 	void				debug(const std::string &str);
 	void				debug(const std::string &src, const std::string &str);

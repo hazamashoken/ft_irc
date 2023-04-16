@@ -1,3 +1,5 @@
+# pragma once
+
 namespace IRC {
 	enum RPL {
 		RPL_WELCOME = 001,

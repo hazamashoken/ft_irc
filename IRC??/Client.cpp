@@ -170,3 +170,7 @@ void Client::appendSendBuffer(const std::string& message) {
 void Client::clearSendBuffer() {
 	__sendBuffer.clear();
 }
+
+int Client::getStatus() const {
+	return __status;
+}

@@ -1,10 +1,10 @@
-
+# pragma once
 namespace Status {
 	enum Status {
 		PASSWORD,
 		CONNECTED,
 		USERNAME,
-		REGISTERED,
+		REGISTER,
 		DELETE
 	};
 }

@@ -6,9 +6,11 @@
 namespace Commands {
 	void USER(Command *command)
 	{
+		Debug::debug("USER");
 		// TODO check if bitmode is needed ?
 		command->getClient()->setUsername(command->getMessage()->getUser());
 		command->getClient()->setHostname(command->getMessage()->getHostname());
 		command->getClient()->setRealname(command->getMessage()->getRealname());
+		command->getClient()->setRegistered(true);
 	}
 }

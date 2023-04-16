@@ -10,6 +10,7 @@ namespace Commands {
 
 	void	NICK(Command *command)
 	{
+		Debug::debug("NICK: " + command->getMessage()->getNickname());
 		// TODO: check if nickname is valid
 		const std::string &nickname = command->getMessage()->getNickname();
 

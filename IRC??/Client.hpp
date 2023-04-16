@@ -39,13 +39,15 @@ public:
 	const std::string& getRealname() const;
 	const std::string& getHostname() const;
 	const std::string& getServername() const;
+	int getStatus() const;
+
 	const std::string& getReadBuffer() const;
 	void setReadBuffer(const std::string& message);
 	int getFd() const;
 	bool isAliveClient();
 	void setRegistered(bool registered);
 	const std::string getPrefix() const;
-	
+
 	const std::string& getSendBuffer() const;
 	void appendSendBuffer(const std::string& message);
 	void clearSendBuffer();
